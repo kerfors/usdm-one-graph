@@ -87,6 +87,14 @@ with their codes. Of the 281 fields, 16 get one value, 53 show such an oddity, 1
 narrative text placed by section number, 6 are mapped to an attribute the study does
 not fill, and 66 have no mapping statement or no M11 element.
 
+A list at the top of the page, "Where the Pilot and the mappings do not fit", opened from
+the oddity counter, groups the same results: what each mapping condition asks for and
+what the study carries instead, codes the study puts in the CDISC code system that are
+not of the form C<digits> (`C99905x1`, "No Concept Code", ...), and text the study holds
+twice. The study's two protocol documents share no content item; five M11 sections
+hold identical copies of the other document's text under different identifiers, found
+by comparing the text and labelled as such.
+
 The scripts contain no codes or values from the study. Two readings are the page's own
 and are stated on it: a condition clause is run only when it tests a code on the mapped
 object or on its parent through the target path's last hop, and a value is not shown

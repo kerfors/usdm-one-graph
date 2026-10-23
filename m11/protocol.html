@@ -41,8 +41,13 @@
   nav li .num { font-family: var(--mono); font-size: 11.5px; min-width: 50px; }
   nav li .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; align-self: center; }
   nav li.d2 a { padding-left: 12px; } nav li.d3 a { padding-left: 20px; } nav li.d4 a { padding-left: 28px; }
-  .fine { color: var(--muted); font-size: 11.5px; margin: 12px 0 0; }
-  .fine a { color: var(--muted); }
+  .oddlink { color: inherit; text-decoration: none; display: block; }
+  .oddlink b { color: var(--amber); text-decoration: underline; text-underline-offset: 3px; }
+  .oddlink:hover span { color: var(--text); }
+  .legend-box { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
+  .legend-box summary { cursor: pointer; margin: 0 0 6px; }
+  .colophon { border-top: 1px solid var(--rule); margin: 28px 0 0; padding-top: 10px; font-size: 11.5px; color: var(--ink-muted); }
+  .colophon a { color: var(--ink-muted); }
   main { margin-left: 380px; padding: 20px 24px 60px 0; }
   .paper { background: var(--paper); color: var(--ink); border-radius: 6px; padding: 40px 56px; max-width: 1000px; }
   .cover { border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 8px; }
@@ -128,14 +133,13 @@
   <p class="lede">Nothing here was typed in or reformatted by hand. The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Each Template field's value is the result of a <b>query over the Pilot's graph</b>, following the published HL7 and CDISC mapping statements. Where the Pilot's data is odd, the page shows where and why instead of failing. Click a field to see how its value was found.</p>
   <div class="counters">
     <div><b id="c-one"></b><span>Template fields with one value found</span></div>
-    <div><b id="c-odd"></b><span>fields where an oddity is visible</span></div>
+    <div><a class="oddlink" href="#oddities"><b id="c-odd"></b><span>fields where an oddity is visible — see the list</span></a></div>
     <div><b id="c-text"></b><span>M11 sections with text from the Pilot</span></div>
   </div>
-  <div class="legend" id="legend"></div>
+  <details class="legend-box"><summary>Field colours</summary><div class="legend" id="legend"></div></details>
   <label class="toggle"><input type="checkbox" id="hide"> Only sections with something from the Pilot</label>
   <label class="toggle"><input type="checkbox" id="open"> Show how every field was found</label>
   <nav><ol id="toc"></ol></nav>
-  <p class="fine">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the Pilot's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). Values are the Pilot's, as published; the Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>
 </aside>
 <main><div class="paper" id="doc"></div></main>
 <script>
@@ -227,7 +231,7 @@ doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 T
   const flinks = fs => fs.map(f => `<a href="#L${f.fid}" data-open="${f.fid}">${esc(f.label)}</a>`).join(", ");
   const HEAD = {"filtered-out": "The mapping's condition finds nothing", "several": "Several values, and the mapping does not say which",
                 "not-checked": "Values found, but a condition could not be run"};
-  let h = `<details class="odd" open><summary>Where the Pilot and the mappings do not fit</summary>
+  let h = `<details class="odd" id="oddities"><summary>Where the Pilot and the mappings do not fit</summary>
     <p>Grouped from the queries below: what a mapping asks for, what the Pilot carries instead, and the fields it affects. Nothing here is written by hand; another study would give its own list.</p>`;
   for (const st of ["filtered-out", "several", "not-checked"]) {
     const rs = O.routes.filter(r => r.status === st);
@@ -287,6 +291,7 @@ if (D.unplaced.length) {
   for (const p of D.unplaced) h += `<li><span style="font-family:var(--mono);font-size:12px">${esc(p.num)}</span> “${esc(p.title)}” — ${esc(PS[p.status])}${p.text ? " (has text)" : ""}</li>`;
   doc.insertAdjacentHTML("beforeend", h + "</ul></div>");
 }
+doc.insertAdjacentHTML("beforeend", `<p class="colophon">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the Pilot's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). Values are the Pilot's, as published; the Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>`);
 doc.addEventListener("click", e => {
   const o = e.target.closest("a[data-open]");
   if (o) {
@@ -301,6 +306,7 @@ doc.addEventListener("click", e => {
   const p = document.getElementById(t.dataset.f);
   p.hidden = !p.hidden;
 });
+document.querySelector(".oddlink").addEventListener("click", () => { document.getElementById("oddities").open = true; });
 document.getElementById("hide").addEventListener("change", e => document.body.classList.toggle("hide-empty", e.target.checked));
 document.getElementById("open").addEventListener("change", e => document.querySelectorAll(".route-panel").forEach(p => p.hidden = !e.target.checked));
 </script>
