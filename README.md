@@ -68,6 +68,36 @@ the attributes the mappings name; links between files come only from
 shared IRIs, except the string matching of step 7a, which is shown on purpose.
 `m11/build_m11_html.py` inlines that into `m11/index.html`.
 
+## Third page: the CDISC Pilot as an ICH M11 protocol
+
+Live page: https://kerfors.github.io/usdm-one-graph/m11/protocol.html
+
+The same published files, used to lay the pilot study out as an ICH M11 protocol. The
+outline is the ICH M11 Template as m11-rdf renders it: 160 headings and 281 fields in
+Template order. Each field's value is found by a SPARQL query over the study's graph,
+following the HL7 and CDISC mapping statements from the M11 element to its USDM
+attribute. Clicking a field shows how: the element, the mapping rows, the attribute,
+the condition, the query and every candidate value with the codes it carries.
+
+Where the example study's data does not fit the mapping, the page says where and why
+instead of failing or leaving a blank. Full Title, for example, is mapped to the
+`StudyTitle` whose type is C207616; the study types its titles with placeholder codes
+(`C99905x1`, `x2`, `x3`), so the condition finds nothing, and all four titles are shown
+with their codes. Of the 281 fields, 16 get one value, 53 show such an oddity, 140 are
+narrative text placed by section number, 6 are mapped to an attribute the study does
+not fill, and 66 have no mapping statement or no M11 element.
+
+The scripts contain no codes or values from the study. Two readings are the page's own
+and are stated on it: a condition clause is run only when it tests a code on the mapped
+object or on its parent through the target path's last hop, and a value is not shown
+as filled while any clause of its condition is not run. Narrative text is placed by
+the study's section number (the mappings' own rule) and otherwise by its title, as on
+the second page.
+
+`m11/lift_protocol.py` uses the same pinned inputs as `m11/lift_m11.py` and writes
+`m11/protocol.json`; `m11/build_protocol_html.py` inlines that into
+`m11/protocol.html`.
+
 ## Licence
 
 Code: MIT. Page content derived from CDISC-published files: CC-BY-4.0, as the
