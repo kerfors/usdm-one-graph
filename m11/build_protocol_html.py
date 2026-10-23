@@ -1,6 +1,7 @@
 """Write m11/protocol.html from m11/protocol.json (built by lift_protocol.py)."""
 import json
-from collections import Counter
+import re
+from collections import Counter, defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -18,8 +19,60 @@ def field_status(f):
 
 
 fields = [f for s in data["sections"] for f in s["fields"]]
-for f in fields:
+for i, f in enumerate(fields):
     f["status"] = field_status(f)
+    f["fid"] = f"f{i}"
+for i, sec in enumerate(data["sections"]):
+    sec["sid"] = f"s{i}"
+
+
+# --- the oddity index: grouped by what the mapping asks and what the study carries -----------------
+def ref(f):
+    return {"fid": f["fid"], "label": f["label"]}
+
+
+groups = defaultdict(lambda: {"fields": [], "carries": set()})
+odd_codes = defaultdict(lambda: {"fields": [], "decode": set()})
+for f in fields:
+    for r in f["routes"]:
+        st = r["status"]
+        for c in r.get("candidates", []):
+            for k in c["codes"]:
+                for x in k["codes"]:
+                    if not re.fullmatch(r"C\d+", x["code"]):
+                        g = odd_codes[x["code"]]
+                        g["decode"].add(x["decode"])
+                        if ref(f) not in g["fields"]:
+                            g["fields"].append(ref(f))
+        if st not in ("filtered-out", "not-checked", "several"):
+            continue
+        if st == "filtered-out":
+            run = [c["text"] for c in r["clauses"] if c["kind"] == "run"]
+            key = (st, r["attr"], " | ".join(run) if run else "last hop " + (r["hop"] or ""))
+        elif st == "not-checked":
+            key = (st, r["attr"], " | ".join(c["text"] for c in r["clauses"] if c["kind"] == "not-run"))
+        else:
+            key = (st, r["attr"], r["cond"] or "no condition stated")
+        g = groups[key]
+        if ref(f) not in g["fields"]:
+            g["fields"].append(ref(f))
+        for c in r.get("candidates", []):
+            for k in c["codes"]:
+                for x in k["codes"]:
+                    g["carries"].add(f"{x['code']} {x['decode']}")
+        g["n_all"] = r.get("n_all")
+ORDER = {"filtered-out": 0, "several": 1, "not-checked": 2}
+data["oddities"] = {
+    "routes": [{"status": k[0], "attr": k[1], "clause": k[2], "fields": g["fields"],
+                "carries": sorted(g["carries"]), "n_all": g["n_all"]}
+               for k, g in sorted(groups.items(), key=lambda kv: (ORDER[kv[0][0]], kv[0][1], kv[0][2]))],
+    "codes": [{**c, "fields": odd_codes[c["code"]]["fields"] if c["code"] in odd_codes else []} for c in data["codes"]],
+    "differ": [{"sid": sec["sid"], "num": sec["num"], "n": n} for sec in data["sections"] for n in sec["notes"]],
+    "copies": [{"sid": sec["sid"], "num": sec["num"], "p": {k: p[k] for k in ("num", "title", "item")}, "copies": p["copies"]}
+               for sec in data["sections"] for p in sec["pilot"] if p["copies"]],
+    "shared": [{"sid": sec["sid"], "num": sec["num"], "p": {k: p[k] for k in ("num", "title")}, "shared": p["shared"]}
+               for sec in data["sections"] for p in sec["pilot"] if p["shared"]],
+}
 data["counts"] = {
     "sections": len(data["sections"]),
     "placed": sum(1 for s in data["sections"] if s["pilot"]),
@@ -94,7 +147,7 @@ html = r"""<!doctype html>
   .pill { font-size: 11px; padding: 0 7px; border-radius: 8px; color: #fff; white-space: nowrap; }
   .note { font-size: 12.5px; background: #FFF4DC; border-left: 3px solid var(--several); padding: 6px 10px; margin: 0 0 8px; }
   .note.red { background: #FCE9E6; border-left-color: var(--out); }
-  .body { font-size: 14px; margin: 6px 0 4px; }
+  .body { font-size: 14px; margin: 6px 0 4px; overflow-x: auto; }
   .body table { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
   .body td, .body th { border: 1px solid var(--rule); padding: 4px 8px; vertical-align: top; text-align: left; }
   .body img { max-width: 100%; height: auto; }
@@ -131,6 +184,16 @@ html = r"""<!doctype html>
   .cands td.mono { font-family: var(--mono); font-size: 11px; }
   .cands tr.kept td:first-child { color: var(--one); font-weight: 600; }
   .cands tr.dropped td { color: var(--ink-muted); }
+  .odd { margin: 14px 0 6px; font-size: 13px; }
+  .odd details summary { font-size: 13px; margin-top: 8px; }
+  .odd summary { cursor: pointer; font-family: var(--serif); font-size: 17px; font-weight: 500; }
+  .odd p { color: var(--ink-muted); margin: 6px 0; }
+  .odd h4 { font-family: var(--sans); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin: 12px 0 4px; }
+  .odd ul { margin: 0; padding-left: 18px; }
+  .odd li { margin: 0 0 6px; }
+  .odd code { font-family: var(--mono); font-size: 11.5px; overflow-wrap: anywhere; }
+  .odd .carries { color: var(--ink-muted); }
+  .odd a { color: var(--blue); }
   .appendix h3 { font-family: var(--serif); font-weight: 500; font-size: 18px; margin: 24px 0 6px; }
   .appendix li { font-size: 13px; }
   .hide-empty .sec.empty { display: none; }
@@ -244,24 +307,61 @@ function routeHtml(f) {
 
 const doc = document.getElementById("doc"), toc = document.getElementById("toc");
 doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 Template, filled from the CDISC Pilot (DDF-RA v4.0.0)</div><h2>Clinical Protocol</h2><p>${C.sections} M11 sections in Template order. ${C.placed} receive a section from the Pilot's M11 document, ${C.text} with text. ${C.fields} Template fields, each followed through the published mappings.</p></div>`);
-let fid = 0;
+{
+  const O = D.oddities;
+  const flinks = fs => fs.map(f => `<a href="#L${f.fid}" data-open="${f.fid}">${esc(f.label)}</a>`).join(", ");
+  const HEAD = {"filtered-out": "The mapping's condition finds nothing", "several": "Several values, and the mapping does not say which",
+                "not-checked": "Values found, but a condition could not be run"};
+  let h = `<details class="odd" open><summary>Where the Pilot and the mappings do not fit</summary>
+    <p>Grouped from the queries below: what a mapping asks for, what the Pilot carries instead, and the fields it affects. Nothing here is written by hand; another study would give its own list.</p>`;
+  for (const st of ["filtered-out", "several", "not-checked"]) {
+    const rs = O.routes.filter(r => r.status === st);
+    if (!rs.length) continue;
+    h += `<details${st === "filtered-out" ? " open" : ""}><summary><h4 style="display:inline">${esc(HEAD[st])} (${rs.length})</h4></summary><ul>`;
+    for (const r of rs) {
+      h += `<li><code>usdm:${esc(r.attr)}</code>, ${st === "not-checked" ? "not run: " : st === "several" ? "condition: " : "asks: "}<code>${esc(r.clause)}</code>`;
+      if (r.carries.length && st !== "several") h += `<br><span class="carries">the Pilot carries: ${r.carries.map(esc).join("; ")}</span>`;
+      h += `<br>${flinks(r.fields)}</li>`;
+    }
+    h += `</ul></details>`;
+  }
+  if (O.codes.length) {
+    h += `<h4>Codes the Pilot puts in the CDISC code system that are not of the NCIt form C&lt;digits&gt; (${O.codes.length})</h4><ul>`;
+    for (const c of O.codes) h += `<li><code>${esc(c.code)}</code> ${c.decode.map(esc).join("; ")} — ${c.n}× on ${c.attrs.map(a => "<code>usdm:" + esc(a) + "</code>").join(", ")}${c.fields.length ? "<br>" + flinks(c.fields) : ""}</li>`;
+    h += `</ul>`;
+  }
+  if (O.copies.length) {
+    h += `<h4>The same text held twice, under different content items (${O.copies.length})</h4><p>Found by comparing the text; ${O.shared.length} sections share a content item by identifier.</p><ul>`;
+    for (const x of O.copies) h += `<li><a href="#${x.sid}">${esc(x.num)}</a> ${esc(x.p.title)} (<code>${esc(pil(x.p.item))}</code>) = ${x.copies.map(c => `${esc(c.template)} ${esc(c.num)} ${esc(c.title)} (<code>${esc(pil(c.item))}</code>)`).join("; ")}</li>`;
+    h += `</ul>`;
+  }
+  if (O.differ.length) {
+    h += `<h4>Pilot sections whose number and title point to different M11 sections (${O.differ.length})</h4><ul>`;
+    for (const x of O.differ) h += `<li>Pilot ${esc(x.n.num)} “${esc(x.n.title)}”: by title <a href="#${x.sid}">${esc(x.num || "this section")}</a></li>`;
+    h += `</ul>`;
+  }
+  if (D.unplaced.length) h += `<h4>Pilot sections that reach no M11 section</h4><p>${D.unplaced.length}, listed at the end.</p>`;
+  doc.insertAdjacentHTML("beforeend", h + `</details>`);
+}
 D.sections.forEach((s, i) => {
   const d = depth(s.num), hasText = s.pilot.some(p => p.text), empty = !s.pilot.length && !s.fields.some(f => ["one","several","not-checked","filtered-out"].includes(f.status));
   const title = s.heading ? s.heading : (s.num ? s.label.slice(s.num.length + 1) : s.label);
   const navCol = hasText ? "var(--one)" : s.pilot.length ? "var(--muted)" : "transparent";
   toc.insertAdjacentHTML("beforeend", `<li class="d${d}${hasText ? " has-text" : ""}${empty ? " empty" : ""}"><a href="#s${i}"><span class="dot" style="background:${navCol};border:1px solid var(--muted)"></span><span class="num">${esc(s.num)}</span><span>${esc(title)}</span></a></li>`);
-  let h = `<section class="sec d${d}${s.optional ? " optional" : ""}${empty ? " empty" : ""}" id="s${i}"><h3><span class="n">${esc(s.num)}</span><span class="t">${esc(title)}</span>${s.optional ? '<span class="flag">optional</span>' : ""}${s.conditional ? '<span class="flag">conditional</span>' : ""}<a class="iri" href="${esc(s.iri)}" target="_blank" rel="noopener">${esc(lastSeg(s.iri))}</a></h3>`;
+  let h = `<section class="sec d${d}${s.optional ? " optional" : ""}${empty ? " empty" : ""}" id="${s.sid}"><h3><span class="n">${esc(s.num)}</span><span class="t">${esc(title)}</span>${s.optional ? '<span class="flag">optional</span>' : ""}${s.conditional ? '<span class="flag">conditional</span>' : ""}<a class="iri" href="${esc(s.iri)}" target="_blank" rel="noopener">${esc(lastSeg(s.iri))}</a></h3>`;
   for (const n of s.notes) h += `<div class="note red">The Pilot's section ${esc(n.num)} “${esc(n.title)}” has this section's title; its number places it at ${esc(n.at.split(".").length ? D.sections.find(x => x.iri === n.at).num : "")}.</div>`;
   if (!s.pilot.length) h += `<p class="pl">No section of the Pilot's M11 document reaches this M11 section.</p>`;
   for (const p of s.pilot) {
     h += `<p class="pl"><span>Pilot section ${esc(p.num)} “${esc(p.title)}”</span><span class="mono">${esc(pil(p.iri))}${p.item ? " → " + esc(pil(p.item)) : ""}</span><span class="pill" style="background:${p.placed_by === "number" ? "var(--one)" : "var(--several)"}">placed by ${esc(p.placed_by)}</span>${p.status !== "agree" ? `<span>${esc(PS[p.status])}</span>` : ""}${p.text ? "" : "<span>heading only, no text</span>"}</p>`;
+    for (const x of p.shared) h += `<div class="note">The same content item is also section ${esc(x.num)} “${esc(x.title)}” of the ${esc(x.template)} document: one text, one identifier.</div>`;
+    for (const x of p.copies) h += `<div class="note">Identical text, under a different content item (<span class="mono">${esc(pil(x.item))}</span>), is section ${esc(x.num)} “${esc(x.title)}” of the ${esc(x.template)} document. Found by comparing the text, not by an identifier: the study holds two copies.</div>`;
     if (p.text) h += `<div class="body">${p.text}</div>`;
   }
   if (s.fields.length) {
     h += `<div class="fields${s.num ? " compact" : ""}">`;
     for (const f of s.fields) {
-      const id = "f" + (fid++);
-      h += `<div class="f-label${f.optional ? " optional" : ""}" data-f="${id}">${esc(f.label)}</div><div class="f-val ${f.status}" data-f="${id}">${valueHtml(f)}</div><div class="route-panel" id="${id}" hidden>${routeHtml(f)}</div>`;
+      const id = f.fid;
+      h += `<div class="f-label${f.optional ? " optional" : ""}" id="L${id}" data-f="${id}">${esc(f.label)}</div><div class="f-val ${f.status}" data-f="${id}">${valueHtml(f)}</div><div class="route-panel" id="${id}" hidden>${routeHtml(f)}</div>`;
     }
     h += `</div>`;
   }
@@ -273,6 +373,14 @@ if (D.unplaced.length) {
   doc.insertAdjacentHTML("beforeend", h + "</ul></div>");
 }
 doc.addEventListener("click", e => {
+  const o = e.target.closest("a[data-open]");
+  if (o) {
+    const p = document.getElementById(o.dataset.open);
+    p.hidden = false;
+    const sec = p.closest(".sec");
+    if (sec) sec.classList.remove("empty");
+    return;
+  }
   const t = e.target.closest("[data-f]");
   if (!t || e.target.closest("a")) return;
   const p = document.getElementById(t.dataset.f);

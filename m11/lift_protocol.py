@@ -62,6 +62,8 @@ M11 = rdflib.Namespace("https://w3id.org/m11-rdf/")
 USDM = "https://w3id.org/cdisc/usdm/v4/"
 U = rdflib.Namespace(USDM)
 BASE_IRI = "https://example.org/studies/CDISC_Pilot/"
+CDISC_CODE_SYSTEM = "http://www.cdisc.org"  # the codeSystem USDM uses for CDISC / NCIt controlled terminology
+M11_TEMPLATE = "M11"  # StudyDefinitionDocument.templateName of the study's M11 protocol document
 PREFIXES = f"PREFIX usdm: <{USDM}> "
 
 gm = rdflib.Graph().parse(fetch("m11")[0], format="turtle")
@@ -257,19 +259,53 @@ P = PREFIXES
 pilot_sections = []
 for nc, num, title, nci in gp.query(P + """
     SELECT ?nc ?num ?title ?nci WHERE {
-      ?doc usdm:StudyDefinitionDocument-templateName "M11" ; usdm:StudyDefinitionDocument-versions ?ver .
+      ?doc usdm:StudyDefinitionDocument-templateName ?tn ; usdm:StudyDefinitionDocument-versions ?ver .
       ?ver usdm:StudyDefinitionDocumentVersion-contents ?nc .
       ?nc usdm:NarrativeContent-sectionNumber ?num ; usdm:NarrativeContent-sectionTitle ?title .
       OPTIONAL { ?nc usdm:NarrativeContent-contentItemId ?nci }
-    }"""):
+    }""", initBindings={"tn": rdflib.Literal(M11_TEMPLATE)}):
     text = None
     if nci is not None:
         t = gp.value(nci, U["NarrativeContentItem-text"])
         text = resolve(str(t), nci) if t is not None else None
     pilot_sections.append({"iri": str(nc), "num": str(num), "title": str(title),
-                           "item": str(nci) if nci is not None else None, "text": text})
-if len(pilot_sections) != 155:
-    raise ValueError(f"expected the Pilot's 155 M11 sections, got {len(pilot_sections)}")
+                           "item": str(nci) if nci is not None else None, "text": text, "shared": []})
+if not pilot_sections:
+    raise ValueError(f"no StudyDefinitionDocument with templateName {M11_TEMPLATE!r} and sections")
+
+# the same NarrativeContentItem used by a section of another document (or another section): a join by identifier
+by_iri = {ps["iri"]: ps for ps in pilot_sections}
+for nc, nc2, tn, num2, title2 in gp.query(P + """
+    SELECT DISTINCT ?nc ?nc2 ?tn ?num2 ?title2 WHERE {
+      ?nc usdm:NarrativeContent-contentItemId ?nci .
+      ?nc2 usdm:NarrativeContent-contentItemId ?nci .
+      FILTER(?nc2 != ?nc)
+      ?ver2 usdm:StudyDefinitionDocumentVersion-contents ?nc2 .
+      ?doc2 usdm:StudyDefinitionDocument-versions ?ver2 ; usdm:StudyDefinitionDocument-templateName ?tn .
+      ?nc2 usdm:NarrativeContent-sectionNumber ?num2 ; usdm:NarrativeContent-sectionTitle ?title2 .
+    }"""):
+    if str(nc) in by_iri:
+        by_iri[str(nc)]["shared"].append({"iri": str(nc2), "template": str(tn), "num": str(num2), "title": str(title2)})
+for ps in pilot_sections:
+    ps["shared"].sort(key=lambda x: (x["template"], x["num"]))
+
+# identical text under a different content item, in any section of any document: string matching, labelled as such
+by_text = defaultdict(list)
+for nc, nci, t, tn, num2, title2 in gp.query(P + """
+    SELECT ?nc ?nci ?t ?tn ?num ?title WHERE {
+      ?nc usdm:NarrativeContent-contentItemId ?nci ; usdm:NarrativeContent-sectionNumber ?num ; usdm:NarrativeContent-sectionTitle ?title .
+      ?nci usdm:NarrativeContentItem-text ?t .
+      ?ver usdm:StudyDefinitionDocumentVersion-contents ?nc .
+      ?doc usdm:StudyDefinitionDocument-versions ?ver ; usdm:StudyDefinitionDocument-templateName ?tn .
+    }"""):
+    by_text[str(t)].append({"iri": str(nc), "item": str(nci), "template": str(tn), "num": str(num2), "title": str(title2)})
+for ps in pilot_sections:
+    ps["copies"] = []
+    if ps["item"] is None:
+        continue
+    t = gp.value(rdflib.URIRef(ps["item"]), U["NarrativeContentItem-text"])
+    if t is not None and str(t).strip():
+        ps["copies"] = sorted((x for x in by_text[str(t)] if x["item"] != ps["item"]), key=lambda x: (x["template"], x["num"]))
 
 # --- M11 sections, Template headings and fields ------------------------------------------------------
 sections = {}
@@ -370,7 +406,23 @@ for v in sections.values():
             raise ValueError(f"{v['iri']}: no Template page and no fields")
         v["page"] = min(f["page"] for f in v["fields"])
 order = sorted(sections.values(), key=lambda v: (v["page"], v["num"] != "", nkey(v["num"])))
-out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "sections": order, "unplaced": unplaced,
+# --- codes the study puts in the CDISC code system that are not of the NCIt form C<digits> ---------------
+odd_codes = defaultdict(lambda: {"decode": set(), "attrs": set(), "n": 0})
+for c, code, decode in gp.query(P + """
+    SELECT ?c ?code ?decode WHERE {
+      ?c a usdm:Code ; usdm:Code-code ?code ; usdm:Code-decode ?decode ; usdm:Code-codeSystem ?cs .
+      FILTER(!REGEX(STR(?code), "^C[0-9]+$"))
+    }""", initBindings={"cs": rdflib.Literal(CDISC_CODE_SYSTEM)}):
+    g = odd_codes[str(code)]
+    g["decode"].add(str(decode))
+    g["n"] += 1
+    for holder, p_ in gp.subject_predicates(c):
+        if str(p_).startswith(USDM):
+            g["attrs"].add(loc(p_, USDM))
+codes = [{"code": k, "decode": sorted(g["decode"]), "attrs": sorted(g["attrs"]), "n": g["n"]} for k, g in sorted(odd_codes.items())]
+print("CDISC-system codes not of the form C<digits>:", [(c["code"], c["n"]) for c in codes])
+
+out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "sections": order, "unplaced": unplaced, "codes": codes,
        "inputs": {k: v[0] for k, v in INPUTS.items()}}
 (HERE / "protocol.json").write_text(json.dumps(out, ensure_ascii=False))
 
@@ -380,6 +432,9 @@ rstat = defaultdict(int)
 for f in fields:
     for r in f["routes"]:
         rstat[r["status"]] += 1
+print("Pilot sections with identical text under another content item:", [(p["num"], [(x["template"], x["num"], x["item"][len(BASE_IRI):]) for x in p["copies"]]) for p in pilot_sections if p["copies"]])
+print("Pilot sections sharing a content item with another section:", sum(1 for p in pilot_sections if p["shared"]),
+      [(p["num"], [(x["template"], x["num"]) for x in p["shared"]]) for p in pilot_sections if p["shared"]])
 print("sections", len(order), "| with Pilot section placed", sum(1 for s in order if s["pilot"]),
       "| with Pilot text", sum(1 for s in order if any(p["text"] for p in s["pilot"])), "| unplaced", len(unplaced))
 print("fields", len(fields), "| realising an element", sum(1 for f in fields if f["element"]),
