@@ -318,7 +318,7 @@
       r.br.forEach(b => el('path', { d: curve(xB + 9, sy[b.e], ax[b.a] - 3, ay[b.a]), fill: 'none', stroke: color, 'stroke-opacity': op, 'stroke-width': w, pathLength: 1 }, g));
       r.classes.forEach(cid => {
         el('line', { x1: xC + 3, y1: barAt[cid].y, x2: xD, y2: barAt[cid].y, stroke: color, 'stroke-opacity': op, 'stroke-width': w, pathLength: 1, class: 'late' }, g);
-        el('rect', { x: xD, y: barAt[cid].y - 2.5, width: barAt[cid].w, height: 5, rx: 1.5, fill: color, class: 'late' }, g);
+        el('rect', { x: xD, y: barAt[cid].y - 2.5, width: barAt[cid].w, height: 5, rx: 1.5, fill: color, class: 'late', 'pointer-events': 'none' }, g);
       });
     };
     const agreed = reach([...new Set(D.contents.filter(c => c.status === 'agree').map(c => c.by_number))]);
