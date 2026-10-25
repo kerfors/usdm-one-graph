@@ -2,14 +2,16 @@
 
 Five published files are parsed as they are, each into its own graph, in the order
 the page loads them:
-  1. m11-rdf.ttl          ICH M11 sections and elements (m11-rdf v0.3.1)
+  1. m11-rdf.ttl          ICH M11 sections and elements (m11-rdf v0.4.0)
   2. usdm_v4.ttl          the USDM v4 model (usdm-rdf v0.7.0)
-  3. m11-usdm.sssom.ttl   the HL7 and CDISC M11-to-USDM mapping statements (m11-rdf v0.3.1)
+  3. m11-usdm.sssom.ttl   the HL7 and CDISC M11-to-USDM mapping statements (m11-rdf v0.4.0)
   4. CDISC_Pilot_Study.json, read through usdm_v4.context.jsonld (DDF-RA v4.0.0, usdm-rdf v0.7.0)
 Links between files are never computed by matching: they exist because two files use the
 same IRI. The one exception is step 6a on the page, which shows on purpose what matching
 strings (section numbers, titles) would give where no shared IRI exists.
 Every input is fetched from a pinned URL and checked by SHA-256.
+Each step also records the size of the graph so far: the distinct triples of the files
+loaded up to that step, merged (graph_triples), not the sum of the file sizes.
 """
 import hashlib
 import json
@@ -25,12 +27,12 @@ HERE = Path(__file__).parent
 CACHE = HERE / "downloads"
 
 INPUTS = {
-    "m11": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.1/m11-rdf.ttl",
-            "ce48db83279fd1212832fa6e885489ab802e96742bfcbcdfe61cbf822226dca6"),
+    "m11": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.4.0/m11-rdf.ttl",
+            "646b14fd5214a5aaba3020b266458796620869d2f5d536860bc3c62d3bd32eca"),
     "usdm": ("https://raw.githubusercontent.com/kerfors/usdm-rdf/v0.7.0/usdm_v4.ttl",
              "7c6c7b2f79ecc9908a5b7cc7f75011a93245b34c54713d7ee9a19b00dc261deb"),
-    "sssom": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.1/m11-usdm.sssom.ttl",
-              "44dada8c4ed414655ebd56935d00d7085af1ac5761df79071cce0f62eaf01430"),
+    "sssom": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.4.0/m11-usdm.sssom.ttl",
+              "03b918e6b62bf94564e93ee79d6ddf2759f49274bfe94d9366a8adf33dc0f8ad"),
     "context": ("https://raw.githubusercontent.com/kerfors/usdm-rdf/v0.7.0/usdm_v4.context.jsonld",
                 "1919be9f0b24b3db80f2e1815f7057cae08b32e9c28b2ad07fecbe65f91694eb"),
     "pilot": ("https://raw.githubusercontent.com/cdisc-org/DDF-RA/v4.0.0/Documents/Examples/CDISC_Pilot/CDISC_Pilot_Study.json",
@@ -65,6 +67,7 @@ steps = []
 # --- 1. ICH M11 -------------------------------------------------------------------------
 path, url = fetch("m11")
 gm = rdflib.Graph().parse(path, format="turtle")
+merged = rdflib.Graph() + gm
 nodes, links = {}, []
 for s in gm.subjects(RDF.type, M11.Section):
     num = gm.value(s, M11.sectionNumber)
@@ -86,13 +89,14 @@ for e in gm.subjects(RDF.type, M11.Element):
             links.append({"s": str(e), "t": sec, "kind": "place", "step": 1, "p": "m11:inSection (via its specification)"})
     nodes[str(e)] = {"id": str(e), "kind": "element", "step": 1, "label": str(gm.value(e, SKOS.prefLabel)),
                      "definition": str(gm.value(e, SKOS.definition) or ""), "blocks": sorted(blocks), "fields": fields}
-steps.append({"file": "m11-rdf.ttl", "url": url, "publisher": "m11-rdf v0.3.1, rendered from ICH M11 (Technical Specification, Template) and the ICH M11 Terminology (NCI EVS)",
-              "triples": len(gm), "nodes": sum(1 for n in nodes.values() if n["step"] == 1), "bridges": 0})
+steps.append({"file": "m11-rdf.ttl", "url": url, "publisher": "m11-rdf v0.4.0, rendered from ICH M11 (Technical Specification, Template) and the ICH M11 Terminology (NCI EVS)",
+              "triples": len(gm), "graph_triples": len(merged), "nodes": sum(1 for n in nodes.values() if n["step"] == 1), "bridges": 0})
 print("1:", steps[-1])
 
 # --- 2. USDM v4 model ------------------------------------------------------------------
 path, url = fetch("usdm")
 gu = rdflib.Graph().parse(path, format="turtle")
+merged += gu
 for c in gu.subjects(RDF.type, OWL.Class):
     if not str(c).startswith(USDM):
         continue
@@ -103,7 +107,7 @@ for c in gu.subjects(RDF.type, OWL.Class):
             links.append({"s": str(c), "t": str(sup), "kind": "sub", "step": 2, "p": "rdfs:subClassOf"})
 n_props = sum(1 for _ in gu.subjects(RDF.type, OWL.DatatypeProperty)) + sum(1 for _ in gu.subjects(RDF.type, OWL.ObjectProperty))
 steps.append({"file": "usdm_v4.ttl", "url": url, "publisher": "usdm-rdf v0.7.0, rendered from CDISC USDM v4.0.0 (DDF-RA)",
-              "triples": len(gu), "nodes": sum(1 for n in nodes.values() if n["step"] == 2), "bridges": 0,
+              "triples": len(gu), "graph_triples": len(merged), "nodes": sum(1 for n in nodes.values() if n["step"] == 2), "bridges": 0,
               "note_props": n_props})
 print("2:", steps[-1])
 
@@ -123,6 +127,7 @@ def attr_node(a, step):
 # --- 3. mapping statements ------------------------------------------------------------
 path, url = fetch("sssom")
 gs = rdflib.Graph().parse(path, format="turtle")
+merged += gs
 pairs = defaultdict(set)
 for ax in gs.subjects(RDF.type, OWL.Axiom):
     e, a = gs.value(ax, OWL.annotatedSource), gs.value(ax, OWL.annotatedTarget)
@@ -143,7 +148,7 @@ for n in nodes.values():
     if "records" in n:
         n["records"].sort(key=lambda x: (x["src"], x["row"]))
 steps.append({"file": "m11-usdm.sssom.ttl", "url": url, "publisher": "the HL7 FHIR Clinical Study Protocol IG ballot mapping (May 2026) and CDISC m11_mapping.xlsx (DDF-RA v4.0.0), as an SSSOM mapping set in m11-rdf",
-              "triples": len(gs), "nodes": sum(1 for n in nodes.values() if n["step"] == 3), "bridges": len(pairs),
+              "triples": len(gs), "graph_triples": len(merged), "nodes": sum(1 for n in nodes.values() if n["step"] == 3), "bridges": len(pairs),
               "statements": sum(1 for _ in gs.subjects(RDF.type, OWL.Axiom)),
               "both": sum(1 for v in pairs.values() if len(v) == 2), "elements": len({e for e, _ in pairs})})
 print("3:", steps[-1])
@@ -157,6 +162,7 @@ study = document["study"]
 cpath, curl = fetch("context")
 study["@context"] = json.loads(cpath.read_text())["@context"]
 gp = rdflib.Graph().parse(data=json.dumps(study), format="json-ld", publicID=BASE_IRI)
+merged += gp
 typed = 0
 classes_used = set()
 for s, o in gp.subject_objects(RDF.type):
@@ -182,7 +188,7 @@ for k, n in nodes.items():
         n["vals"] = vals
 steps.append({"file": "CDISC_Pilot_Study.json", "url": url, "context": curl,
               "publisher": "CDISC (DDF-RA v4.0.0 example), read through the usdm-rdf JSON-LD context",
-              "triples": len(gp), "nodes": typed, "bridges": typed, "classes_used": len(classes_used)})
+              "triples": len(gp), "graph_triples": len(merged), "nodes": typed, "bridges": typed, "classes_used": len(classes_used)})
 print("4:", steps[-1])
 
 # --- 5. the gap: the study's protocol sections and M11 share no identifier -----------------

@@ -288,7 +288,7 @@ document.getElementById("c-text").textContent = C.text + " / " + C.sections;
 {
   const FILES = [["1", "m11", "ICH M11 Template headings and fields, M11 elements"], ["2", "usdm", "USDM v4 classes and attributes"],
                  ["3", "sssom", "HL7 and CDISC mapping statements"], ["4", "pilot", "the study, read through the usdm-rdf JSON-LD context"]];
-  let h = `<p>The same knowledge graph as on the M11 and USDM page: four published files, ${FILES.reduce((n, x) => n + D.triples[x[1]], 0).toLocaleString("en-GB")} triples, brought together by shared identifiers.</p><p>Every hop from a Template field to a value is a link one of these files states, by identifier. The page itself matches text in one place only: placing the Pilot's sections on M11 sections by number and title (6a). Click a field in the Deep dive to see its hops.</p><ol>`;
+  let h = `<p>The same knowledge graph as on the M11 and USDM page: four published files, ${D.graph_triples.toLocaleString("en-GB")} distinct triples when merged, brought together by shared identifiers.</p><p>Every hop from a Template field to a value is a link one of these files states, by identifier. The page itself matches text in one place only: placing the Pilot's sections on M11 sections by number and title (6a). Click a field in the Deep dive to see its hops.</p><ol>`;
   for (const [k, key, what] of FILES) {
     const u = D.inputs[key], parts = u.split("/");
     h += `<li><a class="st" href="index.html?step=${k}">${k}</a><span><a href="${esc(u)}" target="_blank" rel="noopener" class="mono">${esc(parts[parts.length - 1])}</a> (${esc(parts[4])} ${esc(parts[5])})<span>${D.triples[key].toLocaleString("en-GB")} triples: ${esc(what)}</span></span></li>`;

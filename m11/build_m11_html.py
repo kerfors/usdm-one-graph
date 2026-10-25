@@ -211,7 +211,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   <h1>ICH M11 and USDM, Coming Together</h1>
   <p class="lede">A knowledge graph, built up one published file at a time. Where files share identifiers, they join by themselves.</p>
   <div class="counters">
-    <div><b id="c-triples">0</b><span>triples in the graph</span></div>
+    <div><b id="c-triples">0</b><span>distinct triples in the merged graph</span></div>
     <div><b id="c-bridges">0</b><span>links from shared identifiers</span></div>
     <div class="zero"><b>0</b><span>lines of join code</span></div>
   </div>
@@ -533,7 +533,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   function go(k) {
     cur = k; unpin();
     [...ol.children].forEach((li, i) => { li.className = i + 1 < k ? 'done' : i + 1 === k ? 'now' : ''; });
-    let t = 0, b = 0; S.slice(0, k).forEach(s => { t += s.triples; b += s.bridges; });
+    let t = 0, b = 0; S.slice(0, k).forEach(s => { if (s.graph_triples !== undefined) t = s.graph_triples; b += s.bridges; });
     document.getElementById('c-triples').textContent = fmt(t);
     document.getElementById('c-bridges').textContent = fmt(b);
     bNext.textContent = k === 0 ? 'Load the first file' : k < SAY.length ? 'Next' : 'Start again';

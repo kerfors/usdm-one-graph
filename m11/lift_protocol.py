@@ -1,8 +1,8 @@
 """Lift the CDISC Pilot into an ICH M11 protocol outline, using only the published graphs.
 
 Inputs (the same pinned files as lift_m11.py, each checked by SHA-256):
-  m11-rdf.ttl            ICH M11 sections, elements, Template headings and fields (m11-rdf v0.3.1)
-  m11-usdm.sssom.ttl     the HL7 and CDISC M11-to-USDM mapping statements (m11-rdf v0.3.1)
+  m11-rdf.ttl            ICH M11 sections, elements, Template headings and fields (m11-rdf v0.4.0)
+  m11-usdm.sssom.ttl     the HL7 and CDISC M11-to-USDM mapping statements (m11-rdf v0.4.0)
   usdm_v4.ttl            the USDM v4 model (usdm-rdf v0.7.0)
   CDISC_Pilot_Study.json read through usdm_v4.context.jsonld (DDF-RA v4.0.0, usdm-rdf v0.7.0)
 
@@ -28,12 +28,12 @@ CACHE = HERE / "downloads"
 
 # the same pins as lift_m11.py
 INPUTS = {
-    "m11": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.1/m11-rdf.ttl",
-            "ce48db83279fd1212832fa6e885489ab802e96742bfcbcdfe61cbf822226dca6"),
+    "m11": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.4.0/m11-rdf.ttl",
+            "646b14fd5214a5aaba3020b266458796620869d2f5d536860bc3c62d3bd32eca"),
     "usdm": ("https://raw.githubusercontent.com/kerfors/usdm-rdf/v0.7.0/usdm_v4.ttl",
              "7c6c7b2f79ecc9908a5b7cc7f75011a93245b34c54713d7ee9a19b00dc261deb"),
-    "sssom": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.1/m11-usdm.sssom.ttl",
-              "44dada8c4ed414655ebd56935d00d7085af1ac5761df79071cce0f62eaf01430"),
+    "sssom": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.4.0/m11-usdm.sssom.ttl",
+              "03b918e6b62bf94564e93ee79d6ddf2759f49274bfe94d9366a8adf33dc0f8ad"),
     "context": ("https://raw.githubusercontent.com/kerfors/usdm-rdf/v0.7.0/usdm_v4.context.jsonld",
                 "1919be9f0b24b3db80f2e1815f7057cae08b32e9c28b2ad07fecbe65f91694eb"),
     "pilot": ("https://raw.githubusercontent.com/cdisc-org/DDF-RA/v4.0.0/Documents/Examples/CDISC_Pilot/CDISC_Pilot_Study.json",
@@ -75,7 +75,7 @@ if document.get("usdmVersion") != "4.0.0":
 study = document["study"]
 study["@context"] = json.loads(fetch("context")[0].read_text())["@context"]
 gp = rdflib.Graph().parse(data=json.dumps(study), format="json-ld", publicID=BASE_IRI)
-print(f"m11-rdf {len(gm)}, sssom {len(gs)}, usdm-rdf {len(gu)}, pilot {len(gp)} triples")
+print(f"m11-rdf {len(gm)}, sssom {len(gs)}, usdm-rdf {len(gu)}, pilot {len(gp)} triples; merged {len(gm + gu + gs + gp)} distinct")
 
 
 def loc(iri, ns):
@@ -425,7 +425,7 @@ print("CDISC-system codes not of the form C<digits>:", [(c["code"], c["n"]) for 
 
 out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "sections": order, "unplaced": unplaced, "codes": codes,
        "inputs": {k: v[0] for k, v in INPUTS.items()},
-       "triples": {"m11": len(gm), "usdm": len(gu), "sssom": len(gs), "pilot": len(gp)}}
+       "triples": {"m11": len(gm), "usdm": len(gu), "sssom": len(gs), "pilot": len(gp)}, "graph_triples": len(gm + gu + gs + gp)}
 (HERE / "protocol.json").write_text(json.dumps(out, ensure_ascii=False))
 
 # --- counts for the page text and the README --------------------------------------------------------
