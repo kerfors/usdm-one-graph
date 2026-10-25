@@ -424,7 +424,8 @@ codes = [{"code": k, "decode": sorted(g["decode"]), "attrs": sorted(g["attrs"]),
 print("CDISC-system codes not of the form C<digits>:", [(c["code"], c["n"]) for c in codes])
 
 out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "sections": order, "unplaced": unplaced, "codes": codes,
-       "inputs": {k: v[0] for k, v in INPUTS.items()}}
+       "inputs": {k: v[0] for k, v in INPUTS.items()},
+       "triples": {"m11": len(gm), "usdm": len(gu), "sssom": len(gs), "pilot": len(gp)}}
 (HERE / "protocol.json").write_text(json.dumps(out, ensure_ascii=False))
 
 # --- counts for the page text and the README --------------------------------------------------------

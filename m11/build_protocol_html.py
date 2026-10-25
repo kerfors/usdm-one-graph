@@ -213,6 +213,22 @@ html = r"""<!doctype html>
   .simple .sec.optional h3 .t, .simple .f-label.optional { color: inherit; }
   .simple .f-val { border-left: 0; }
   .simple .f-label .ph { color: var(--ink-muted); opacity: 0.75; }
+  .graph-box { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
+  .graph-box summary { cursor: pointer; color: var(--text); margin: 0 0 6px; }
+  .graph-box ol { list-style: none; margin: 0 0 6px; padding: 0; }
+  .graph-box li { display: grid; grid-template-columns: 24px 1fr; gap: 0 6px; margin: 0 0 5px; }
+  .graph-box li span { display: block; }
+  .graph-box a { color: var(--text); }
+  .graph-box a.st, .graph-box .mono { font-family: var(--mono); font-size: 11.5px; }
+  .graph-box a.st { color: var(--amber); text-decoration: none; }
+  .hops { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin: 0 0 8px; font-size: 12px; }
+  .hops .node { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 1px 6px; }
+  .hops .end { color: var(--ink-muted); font-style: italic; padding: 0 4px; }
+  .hops .hop { display: inline-flex; align-items: center; color: var(--ink-muted); font-size: 11px; padding: 0 4px; }
+  .hops .hop::before { content: ""; width: 12px; border-top: 2px solid var(--ink-muted); margin-right: 4px; }
+  .hops .hop::after { content: "→"; margin-left: 3px; }
+  .hops .hop.str::before { border-top-style: dashed; }
+  .hops a.st { font-family: var(--mono); font-size: 10.5px; color: var(--blue); text-decoration: none; border: 1px solid currentColor; border-radius: 6px; padding: 0 4px; margin-right: 4px; }
   @media (max-width: 900px) {
     .panel { position: static; width: auto; margin: 16px; }
     main { margin: 0 16px; padding: 0 0 40px; }
@@ -233,6 +249,7 @@ html = r"""<!doctype html>
     <div><a class="oddlink" href="#oddities"><b id="c-odd"></b><span>fields where an oddity is visible — see the list</span></a></div>
     <div><b id="c-text"></b><span>M11 sections with text from the Pilot</span></div>
   </div>
+  <details class="graph-box" id="gb"><summary>The graph behind this page</summary><div id="gb-body"></div></details>
   <details class="legend-box"><summary>Field colours</summary><div class="legend" id="legend"></div></details>
   <label class="toggle"><input type="checkbox" id="hide"> Only sections with something from the Pilot</label>
   <label class="toggle"><input type="checkbox" id="open"> Show how every field was found</label>
@@ -265,6 +282,17 @@ const C = D.counts, FS = C.field_status;
 document.getElementById("c-one").textContent = (FS["one"] || 0) + " / " + C.fields;
 document.getElementById("c-odd").textContent = (FS["several"] || 0) + (FS["not-checked"] || 0) + (FS["filtered-out"] || 0);
 document.getElementById("c-text").textContent = C.text + " / " + C.sections;
+{
+  const FILES = [["1", "m11", "ICH M11 Template headings and fields, M11 elements"], ["2", "usdm", "USDM v4 classes and attributes"],
+                 ["3", "sssom", "HL7 and CDISC mapping statements"], ["5", "pilot", "the study, read through the usdm-rdf JSON-LD context"]];
+  let h = `<p>Published files, each loaded as it is. Every hop from a Template field to a value is a link one of these files states, by identifier. The page itself matches text in one place only: placing the Pilot's sections on M11 sections by number and title (7a). Click a field in the Deep dive to see its hops.</p><ol>`;
+  for (const [k, key, what] of FILES) {
+    const u = D.inputs[key], parts = u.split("/");
+    h += `<li><a class="st" href="index.html?step=${k}">${k}</a><span><a href="${esc(u)}" target="_blank" rel="noopener" class="mono">${esc(parts[parts.length - 1])}</a> (${esc(parts[4])} ${esc(parts[5])})<span>${D.triples[key].toLocaleString("en-GB")} statements: ${esc(what)}</span></span></li>`;
+  }
+  h += `</ol><p>The numbers are the steps on the <a href="index.html?step=1">M11 and USDM page</a>, where the same graph is built up one file at a time.</p>`;
+  document.getElementById("gb-body").innerHTML = h;
+}
 const lg = document.getElementById("legend");
 for (const k of Object.keys(ST)) {
   if (!FS[k]) continue;
@@ -325,10 +353,31 @@ function instanceValues(f, o) {
   return [...new Set(kept)];
 }
 
-function routeHtml(f) {
+const stepLink = k => `<a class="st" href="index.html?step=${k}" title="step ${k} on the M11 and USDM page">${k}</a>`;
+const hop = (k, text, str) => `<span class="hop${str ? " str" : ""}">${stepLink(k)}${text}</span>`;
+const node = h => `<span class="node">${h}</span>`;
+// The route as hops between identifiers, each hop with the step (M11 and USDM page) whose file states it;
+// dashed: the one hop that rests on matching text.
+function hopsHtml(f, s, r) {
+  let h = node(`Template field “${esc(f.label)}”`);
+  if (!f.element) return `<div class="hops">${h}<span class="end">realises no M11 element</span></div>`;
+  h += hop("1", "m11:realises") + node(`<code>${esc(lastSeg(f.element.iri))}</code> ${esc(f.element.label)}`);
+  if (!r) return `<div class="hops">${h}<span class="end">no mapping statement</span></div>`;
+  h += hop("3", "m11:mappedTo · " + r.sources.map(x => `${esc(x[0])} row ${esc(x[1])}`).join(", ")) + node(`${stepLink("2")}<code>usdm:${esc(r.attr)}</code>`);
+  if (r.status === "section-rule") {
+    h += hop("7a", "section number or title, as text", true);
+    h += s.pilot.length ? s.pilot.map(p => node(`Pilot section ${esc(p.num)} “${esc(p.title)}”`)).join("") : `<span class="end">no Pilot section placed here</span>`;
+  } else {
+    h += hop("5", "the same IRI in the study") + node(r.n_all ? `${r.n_kept} of ${r.n_all} study objects kept` : "no study object has it");
+  }
+  return `<div class="hops">${h}</div>`;
+}
+
+function routeHtml(f, s) {
   let h = "";
   if (f.element) h += `<div class="route"><div class="row"><span>M11 element</span><span><a href="${esc(f.element.iri)}" target="_blank" rel="noopener"><code>${esc(lastSeg(f.element.iri))}</code></a> ${esc(f.element.label)}</span><span>Template field</span><span>${esc(f.label)} · page ${f.page}${f.optional ? " · optional" : ""}${f.conditional ? " · conditional" : ""}</span></div></div>`;
   else h += `<div class="route">This Template field realises no element in m11-rdf (see m11-rdf's Template report).</div>`;
+  if (!f.element || !f.routes.length) h += hopsHtml(f, s, null);
   for (const r of f.routes) {
     const src = r.sources.map(s => `${s[0]} row ${s[1]}`).join(", ");
     let cls = r.clauses.map(c => {
@@ -336,7 +385,7 @@ function routeHtml(f) {
       const lab = c.kind === "run" ? (c.on === "parent" ? "run on parent" : "run") : c.kind === "section" ? "section rule" : "not run";
       return `<div class="cl"><b style="background:${col}">${lab}</b>${esc(c.text)}</div>`;
     }).join("");
-    h += `<div class="route"><div class="row">
+    h += `<div class="route">${hopsHtml(f, s, r)}<div class="row">
       <span>Stated by</span><span>${esc(src)}</span>
       <span>USDM attribute</span><span><a href="${esc(D.usdm + r.attr)}" target="_blank" rel="noopener"><code>usdm:${esc(r.attr)}</code></a></span>
       <span>Target path</span><span><code>${esc(r.targets.join(" ; "))}</code></span>
@@ -415,7 +464,7 @@ D.sections.forEach((s, i) => {
     h += `<div class="fields${s.num ? " compact" : ""}">`;
     for (const f of s.fields) {
       const id = f.fid;
-      h += `<div class="f-label${f.optional ? " optional" : ""}" id="L${id}" data-f="${id}"><span class="dv">${esc(f.label)}</span><span class="sv">${simpleLabel(f)}</span></div><div class="f-val ${f.status}" data-f="${id}"><div class="dv">${valueHtml(f)}</div><div class="sv">${simpleValue(f)}</div></div><div class="route-panel" id="${id}" hidden>${routeHtml(f)}</div>`;
+      h += `<div class="f-label${f.optional ? " optional" : ""}" id="L${id}" data-f="${id}"><span class="dv">${esc(f.label)}</span><span class="sv">${simpleLabel(f)}</span></div><div class="f-val ${f.status}" data-f="${id}"><div class="dv">${valueHtml(f)}</div><div class="sv">${simpleValue(f)}</div></div><div class="route-panel" id="${id}" hidden>${routeHtml(f, s)}</div>`;
     }
     h += `</div>`;
   }
@@ -461,6 +510,7 @@ doc.addEventListener("click", e => {
 });
 function setView(v) {
   document.body.classList.toggle("simple", v === "simple");
+  document.getElementById("gb").open = v === "deep";
   document.querySelectorAll(".views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
   const u = new URL(location.href);
   if (v === "deep") u.searchParams.set("view", "deep"); else u.searchParams.delete("view");

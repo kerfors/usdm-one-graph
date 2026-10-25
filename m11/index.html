@@ -35,6 +35,7 @@
   ol.steps li.now .say { display: block; }
   .say .file { font-family: var(--mono); font-size: 12px; color: var(--amber); text-decoration: none; }
   .say .file:hover { text-decoration: underline; }
+  .say a.on { color: var(--amber); }
   .nav { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin: 0 0 14px; }
   .btn { padding: 9px 12px; border-radius: 4px; border: 1px solid var(--panel-edge); background: rgba(255,255,255,0.03);
          color: var(--text); font: inherit; font-weight: 500; cursor: pointer; }
@@ -137,7 +138,7 @@
     ['The study\'s definitions', () => file(S[4]) + '<br>' + fmt(S[4].nodes) + ' objects find their ' + S[4].classes_used + ' USDM classes by themselves, through the JSON-LD context.'],
     ['The study\'s protocol', () => 'The same study file also holds its protocol: ' + S[6].contents + ' sections, part of the highlighted bar. Each has a number and a title, as text. None carries an ICH M11 identifier, so nothing links them to the spine.'],
     ['Protocol sections → ICH M11 sections', () => 'Each of the ' + S[6].contents + ' protocol sections placed on an ICH M11 section. With no identifier, the section number and title are all there is to go on. <b style="color:var(--ok)">' + st7.agree + '</b> land on the same M11 section by both, <b style="color:var(--bad)">' + st7.differ + '</b> on two different ones, ' + (S[6].contents - st7.agree - st7.differ) + ' on one or none (grey). Hover one to see where.'],
-    ['Protocol sections → the study\'s definitions', () => 'From the ' + st7.agree + ' placed sections, through their M11 elements, to the study\'s definitions: ' + R7.els + ' elements reach <b style="color:var(--both)">' + R7.attrs + ' specific USDM attributes</b>, and the objects in the study that hold them. ' + R7.gen + ' reach only NarrativeContentItem.text (grey), which does not say what the text is. Hover a section to see the values. With M11 identifiers in the study\'s definitions, these would all be links: a question for USDM 4.1.']
+    ['Protocol sections → the study\'s definitions', () => 'From the ' + st7.agree + ' placed sections, through their M11 elements, to the study\'s definitions: ' + R7.els + ' elements reach <b style="color:var(--both)">' + R7.attrs + ' specific USDM attributes</b>, and the objects in the study that hold them. ' + R7.gen + ' reach only NarrativeContentItem.text (grey), which does not say what the text is. Hover a section to see the values. With M11 identifiers in the study\'s definitions, these would all be links: a question for USDM 4.1. <a class="on" href="protocol.html">The same graph, laid out as an ICH M11 protocol →</a>']
   ];
   const ol = document.getElementById('steps');
   SAY.forEach((s, i) => {
@@ -445,7 +446,7 @@
   bBack.addEventListener('click', () => { if (cur > 0) go(cur - 1); });
   window.addEventListener('resize', draw);
   document.fonts.ready.then(draw);
-  draw(); go(0);
+  draw(); go(['1', '2', '3', '4', '5', '6', '7a', '7b'].indexOf(new URLSearchParams(location.search).get('step')) + 1);
   window.M11Story = { go };
 })();
 </script>

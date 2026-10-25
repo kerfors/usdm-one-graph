@@ -59,6 +59,8 @@ only share text, you are back to matching strings.
    With M11 section identifiers in the study's definitions, 7a and 7b would be links
    like step 3; that is left as a question for USDM 4.1.
 
+`index.html?step=3` opens a given step; the last step links to the third page.
+
 The example study is not fully consistent or populated; it is used because it is real.
 Every M11, USDM and NCIt identifier shown resolves.
 
@@ -102,7 +104,9 @@ as the Template's grey placeholder, `<…>` or `[…]`. "Deep dive" (`protocol.h
 is the page described above, with the colours, the oddity list and how each value was
 found. Clicking a field in the protocol view opens the deep dive at that field.
 Headings the Template repeats (<#>) are repeated per objective, numbered by the study's
-identifiers.
+identifiers. In the deep dive each route starts with its hops between identifiers,
+numbered by the steps of the second page; a side-panel block lists the files behind the
+page.
 
 The scripts contain no codes or values from the study. Two readings are the page's own
 and are stated on it: a condition clause is run only when it tests a code on the mapped
