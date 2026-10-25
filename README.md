@@ -101,6 +101,8 @@ fields where the queries find one value or several values; every other field is 
 as the Template's grey placeholder, `<…>` or `[…]`. "Deep dive" (`protocol.html?view=deep`)
 is the page described above, with the colours, the oddity list and how each value was
 found. Clicking a field in the protocol view opens the deep dive at that field.
+Headings the Template repeats (<#>) are repeated per objective, numbered by the study's
+identifiers.
 
 The scripts contain no codes or values from the study. Two readings are the page's own
 and are stated on it: a condition clause is run only when it tests a code on the mapped

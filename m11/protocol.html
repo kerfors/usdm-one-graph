@@ -211,14 +211,33 @@ function simpleValues(f) {
   for (const x of f.routes) if (x.candidates) for (const c of x.candidates) if (c.kept && x.status === f.status && c.value.trim()) kept.push(c.value);
   return [...new Set(kept)];
 }
-function simpleLabel(f) {
-  if (simpleValues(f).length) return esc(f.label);
+function simpleLabel(f, v = simpleValues(f)) {
+  if (v.length) return esc(f.label);
   return `<span class="ph">${f.kind === "ControlledTerminology" ? "[" + esc(f.label) + "]" : "&lt;" + esc(f.label) + "&gt;"}</span>`;
 }
-function simpleValue(f) {
-  const v = simpleValues(f);
+function simpleValue(f, v = simpleValues(f)) {
   if (!v.length) return "";
   return v.length === 1 ? `<span class="val">${v[0]}</span>` : `<ul>${v.map(x => `<li class="val">${x}</li>`).join("")}</ul>`;
+}
+// Repeating headings (<#>): the instances are the study objects behind the non-empty values of the field whose
+// element label is the heading without {…} and <#>; ordered by identifier (the graph holds no order for them).
+// A section with study text is not repeated.
+function instances(s) {
+  if (!/<#>/.test(s.heading || "") || s.pilot.some(p => p.text)) return [];
+  const f = s.fields.find(f => f.element && f.element.label === plainHeading(s.heading));
+  if (!f || (f.status !== "one" && f.status !== "several")) return [];
+  const objs = [];
+  for (const x of f.routes) if (x.candidates && x.status === f.status) for (const c of x.candidates)
+    if (c.kept && c.value.trim() && !objs.includes(c.s)) objs.push(c.s);
+  return objs.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+}
+// A field's values within one instance: the instance object itself, or objects reached from it by the last hop.
+function instanceValues(f, o) {
+  if (f.status !== "one" && f.status !== "several") return [];
+  const kept = [];
+  for (const x of f.routes) if (x.candidates && x.status === f.status) for (const c of x.candidates)
+    if (c.kept && c.value.trim() && (c.s === o || c.via.includes(pil(o)))) kept.push(c.value);
+  return [...new Set(kept)];
 }
 
 function routeHtml(f) {
@@ -296,8 +315,9 @@ D.sections.forEach((s, i) => {
   const d = depth(s.num), hasText = s.pilot.some(p => p.text), empty = !s.pilot.length && !s.fields.some(f => ["one","several","not-checked","filtered-out"].includes(f.status));
   const title = s.heading ? s.heading : (s.num ? s.label.slice(s.num.length + 1) : s.label);
   const navCol = hasText ? "var(--one)" : s.pilot.length ? "var(--muted)" : "transparent";
-  toc.insertAdjacentHTML("beforeend", `<li class="d${d}${hasText ? " has-text" : ""}${empty ? " empty" : ""}"><a href="#s${i}"><span class="dot" style="background:${navCol};border:1px solid var(--muted)"></span><span class="num">${esc(s.num)}</span><span class="dv">${esc(title)}</span><span class="sv">${esc(plainHeading(title))}</span></a></li>`);
-  let h = `<section class="sec d${d}${s.optional ? " optional" : ""}${empty ? " empty" : ""}" id="${s.sid}"><h3><span class="n">${esc(s.num)}</span><span class="t dv">${esc(title)}</span><span class="t sv">${esc(plainHeading(title))}</span>${s.optional ? '<span class="flag">optional</span>' : ""}${s.conditional ? '<span class="flag">conditional</span>' : ""}<a class="iri" href="${esc(s.iri)}" target="_blank" rel="noopener">${esc(lastSeg(s.iri))}</a></h3>`;
+  const inst = instances(s);
+  toc.insertAdjacentHTML("beforeend", `<li class="d${d}${hasText ? " has-text" : ""}${empty ? " empty" : ""}${inst.length ? " dv" : ""}"><a href="#s${i}"><span class="dot" style="background:${navCol};border:1px solid var(--muted)"></span><span class="num">${esc(s.num)}</span><span class="dv">${esc(title)}</span><span class="sv">${esc(plainHeading(title))}</span></a></li>`);
+  let h = `<section class="sec d${d}${s.optional ? " optional" : ""}${empty ? " empty" : ""}${inst.length ? " dv" : ""}" id="${s.sid}"><h3><span class="n">${esc(s.num)}</span><span class="t dv">${esc(title)}</span><span class="t sv">${esc(plainHeading(title))}</span>${s.optional ? '<span class="flag">optional</span>' : ""}${s.conditional ? '<span class="flag">conditional</span>' : ""}<a class="iri" href="${esc(s.iri)}" target="_blank" rel="noopener">${esc(lastSeg(s.iri))}</a></h3>`;
   for (const n of s.notes) h += `<div class="note red">The Pilot's section ${esc(n.num)} “${esc(n.title)}” has this section's title; its number places it at ${esc(n.at.split(".").length ? D.sections.find(x => x.iri === n.at).num : "")}.</div>`;
   if (!s.pilot.length) h += `<p class="pl">No section of the Pilot's M11 document reaches this M11 section.</p>`;
   for (const p of s.pilot) {
@@ -315,13 +335,25 @@ D.sections.forEach((s, i) => {
     h += `</div>`;
   }
   doc.insertAdjacentHTML("beforeend", h + "</section>");
+  inst.forEach((o, k) => {
+    const parts = s.num.split(".");
+    parts[parts.length - 1] = String(Number(parts[parts.length - 1]) + k);
+    const num = parts.join("."), t = s.heading.replace(/[{}]/g, "").replace("<#>", String(k + 1)).trim();
+    toc.insertAdjacentHTML("beforeend", `<li class="d${d} sv"><a href="#${s.sid}i${k + 1}"><span class="dot" style="background:${navCol};border:1px solid var(--muted)"></span><span class="num">${esc(num)}</span><span>${esc(t)}</span></a></li>`);
+    let g = `<section class="sec d${d} sv" id="${s.sid}i${k + 1}"><h3><span class="n">${esc(num)}</span><span class="t">${esc(t)}</span></h3><div class="fields compact">`;
+    for (const f of s.fields) {
+      const v = instanceValues(f, o);
+      g += `<div class="f-label" data-f="${f.fid}">${simpleLabel(f, v)}</div><div class="f-val" data-f="${f.fid}">${simpleValue(f, v)}</div>`;
+    }
+    doc.insertAdjacentHTML("beforeend", g + "</div></section>");
+  });
 });
 if (D.unplaced.length) {
   let h = `<div class="appendix"><h3>Pilot sections that reach no M11 section</h3><ul>`;
   for (const p of D.unplaced) h += `<li><span style="font-family:var(--mono);font-size:12px">${esc(p.num)}</span> “${esc(p.title)}” — ${esc(PS[p.status])}${p.text ? " (has text)" : ""}</li>`;
   doc.insertAdjacentHTML("beforeend", h + "</ul></div>");
 }
-doc.insertAdjacentHTML("beforeend", `<p class="colophon">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the Pilot's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). Values are the Pilot's, as published; the Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>`);
+doc.insertAdjacentHTML("beforeend", `<p class="colophon">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the Pilot's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). In the Protocol view a heading with &lt;#&gt; is repeated for each study object behind the field named like the heading, numbered in the order of the study's identifiers (the graph holds no order for them); each repeat keeps the values of that object and of objects reached from it. Values are the Pilot's, as published; the Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>`);
 doc.addEventListener("click", e => {
   const o = e.target.closest("a[data-open]");
   if (o) {
