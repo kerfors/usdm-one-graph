@@ -204,9 +204,9 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
 
 <aside class="panel">
   <h1>ICH M11 and USDM, Coming Together</h1>
-  <p class="lede">Published files, loaded as they are. Where they share identifiers, they join by themselves.</p>
+  <p class="lede">A knowledge graph, built up one published file at a time. Where files share identifiers, they join by themselves.</p>
   <div class="counters">
-    <div><b id="c-triples">0</b><span>triples loaded</span></div>
+    <div><b id="c-triples">0</b><span>triples in the graph</span></div>
     <div><b id="c-bridges">0</b><span>links from shared identifiers</span></div>
     <div class="zero"><b>0</b><span>lines of join code</span></div>
   </div>
