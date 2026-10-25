@@ -39,10 +39,10 @@ Published files about ICH M11 and USDM v4, loaded one at a time and as they are,
 six steps (the last in two parts, 6a and 6b). Where two files use the same identifier, they join by themselves; where they
 only share text, you are back to matching strings.
 
-1. `m11-rdf.ttl` ([m11-rdf](https://github.com/kerfors/m11-rdf) v0.3.0): ICH M11
+1. `m11-rdf.ttl` ([m11-rdf](https://github.com/kerfors/m11-rdf) v0.3.1): ICH M11
    sections and elements, one island.
 2. `usdm_v4.ttl` (usdm-rdf v0.7.0): the USDM v4 model, a second island.
-3. `m11-usdm.sssom.ttl` (m11-rdf v0.3.0): the HL7 and CDISC M11-to-USDM mapping
+3. `m11-usdm.sssom.ttl` (m11-rdf v0.3.1): the HL7 and CDISC M11-to-USDM mapping
    statements; 224 links appear between the islands, because each statement names both
    identifiers. 210 are stated by both CDISC and HL7, 14 by only one (11 HL7, 3 CDISC).
 4. The study's definitions: `CDISC_Pilot_Study.json` (DDF-RA v4.0.0), read through the

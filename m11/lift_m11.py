@@ -2,9 +2,9 @@
 
 Five published files are parsed as they are, each into its own graph, in the order
 the page loads them:
-  1. m11-rdf.ttl          ICH M11 sections and elements (m11-rdf v0.3.0)
+  1. m11-rdf.ttl          ICH M11 sections and elements (m11-rdf v0.3.1)
   2. usdm_v4.ttl          the USDM v4 model (usdm-rdf v0.7.0)
-  3. m11-usdm.sssom.ttl   the HL7 and CDISC M11-to-USDM mapping statements (m11-rdf v0.3.0)
+  3. m11-usdm.sssom.ttl   the HL7 and CDISC M11-to-USDM mapping statements (m11-rdf v0.3.1)
   4. CDISC_Pilot_Study.json, read through usdm_v4.context.jsonld (DDF-RA v4.0.0, usdm-rdf v0.7.0)
 Links between files are never computed by matching: they exist because two files use the
 same IRI. The one exception is step 6a on the page, which shows on purpose what matching
@@ -25,12 +25,12 @@ HERE = Path(__file__).parent
 CACHE = HERE / "downloads"
 
 INPUTS = {
-    "m11": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.0/m11-rdf.ttl",
-            "1b94d710ebd24d8cb52c5782eff6f62089c2fc31a8bc3264b7e2aa952541a433"),
+    "m11": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.1/m11-rdf.ttl",
+            "ce48db83279fd1212832fa6e885489ab802e96742bfcbcdfe61cbf822226dca6"),
     "usdm": ("https://raw.githubusercontent.com/kerfors/usdm-rdf/v0.7.0/usdm_v4.ttl",
              "7c6c7b2f79ecc9908a5b7cc7f75011a93245b34c54713d7ee9a19b00dc261deb"),
-    "sssom": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.0/m11-usdm.sssom.ttl",
-              "8a00c6af68d4757bb55ee3c769d603ede8824d449ad392ad00f97d0ec8da8344"),
+    "sssom": ("https://raw.githubusercontent.com/kerfors/m11-rdf/v0.3.1/m11-usdm.sssom.ttl",
+              "44dada8c4ed414655ebd56935d00d7085af1ac5761df79071cce0f62eaf01430"),
     "context": ("https://raw.githubusercontent.com/kerfors/usdm-rdf/v0.7.0/usdm_v4.context.jsonld",
                 "1919be9f0b24b3db80f2e1815f7057cae08b32e9c28b2ad07fecbe65f91694eb"),
     "pilot": ("https://raw.githubusercontent.com/cdisc-org/DDF-RA/v4.0.0/Documents/Examples/CDISC_Pilot/CDISC_Pilot_Study.json",
@@ -86,7 +86,7 @@ for e in gm.subjects(RDF.type, M11.Element):
             links.append({"s": str(e), "t": sec, "kind": "place", "step": 1, "p": "m11:inSection (via its specification)"})
     nodes[str(e)] = {"id": str(e), "kind": "element", "step": 1, "label": str(gm.value(e, SKOS.prefLabel)),
                      "definition": str(gm.value(e, SKOS.definition) or ""), "blocks": sorted(blocks), "fields": fields}
-steps.append({"file": "m11-rdf.ttl", "url": url, "publisher": "m11-rdf v0.3.0, rendered from ICH M11 (Technical Specification, Template) and the ICH M11 Terminology (NCI EVS)",
+steps.append({"file": "m11-rdf.ttl", "url": url, "publisher": "m11-rdf v0.3.1, rendered from ICH M11 (Technical Specification, Template) and the ICH M11 Terminology (NCI EVS)",
               "triples": len(gm), "nodes": sum(1 for n in nodes.values() if n["step"] == 1), "bridges": 0})
 print("1:", steps[-1])
 

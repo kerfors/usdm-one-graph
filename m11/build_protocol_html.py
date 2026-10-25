@@ -337,12 +337,12 @@ function simpleValue(f, v = simpleValues(f)) {
   if (!v.length) return `<span class="ph">—</span>`;
   return v.length === 1 ? `<span class="val">${v[0]}</span>` : `<ul>${v.map(x => `<li class="val">${x}</li>`).join("")}</ul>`;
 }
-// Repeating headings (<#>): the instances are the study objects behind the non-empty values of the field whose
-// element label is the heading without {…} and <#>; ordered by identifier (the graph holds no order for them).
+// Repeating headings (<#>): the instances are the study objects behind the non-empty values of the field that
+// realises the heading's element (m11:headingElement); ordered by identifier (the graph holds no order for them).
 // A section with study text is not repeated.
 function instances(s) {
   if (!/<#>/.test(s.heading || "") || s.pilot.some(p => p.text)) return [];
-  const f = s.fields.find(f => f.element && f.element.label === plainHeading(s.heading));
+  const f = s.fields.find(f => f.element && f.element.iri === s.heading_element);
   if (!f || (f.status !== "one" && f.status !== "several")) return [];
   const objs = [];
   for (const x of f.routes) if (x.candidates && x.status === f.status) for (const c of x.candidates)
@@ -492,7 +492,7 @@ if (D.unplaced.length) {
   for (const p of D.unplaced) h += `<li><span style="font-family:var(--mono);font-size:12px">${esc(p.num)}</span> “${esc(p.title)}” — ${esc(PS[p.status])}${p.text ? " (has text)" : ""}</li>`;
   doc.insertAdjacentHTML("beforeend", h + "</ul></div>");
 }
-doc.insertAdjacentHTML("beforeend", `<p class="colophon">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the Pilot's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). In the Protocol view a heading with &lt;#&gt; is repeated for each study object behind the field named like the heading, numbered in the order of the study's identifiers (the graph holds no order for them); each repeat keeps the values of that object and of objects reached from it. Values are the Pilot's, as published; the Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>`);
+doc.insertAdjacentHTML("beforeend", `<p class="colophon">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the Pilot's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). In the Protocol view a heading with &lt;#&gt; is repeated for each study object behind the field for the heading's element, numbered in the order of the study's identifiers (the graph holds no order for them); each repeat keeps the values of that object and of objects reached from it. Values are the Pilot's, as published; the Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>`);
 doc.addEventListener("click", e => {
   const o = e.target.closest("a[data-open]");
   if (o) {
