@@ -118,6 +118,16 @@
   .appendix li { font-size: 13px; }
   .hide-empty .sec.empty { display: none; }
   .hide-empty nav li.empty { display: none; }
+  .views { display: flex; border: 1px solid var(--panel-edge); border-radius: 6px; overflow: hidden; margin: 0 0 14px; }
+  .views button { flex: 1; background: transparent; color: var(--muted); border: 0; padding: 6px 0; font: 500 13px var(--sans); cursor: pointer; }
+  .views button[aria-pressed="true"] { background: var(--amber); color: var(--ground); }
+  body:not(.simple) .sv { display: none; }
+  .simple .dv, .simple .counters, .simple .legend-box, .simple label.toggle, .simple .pl, .simple .note,
+  .simple #oddities, .simple .flag, .simple .sec h3 a.iri, .simple .route-panel, .simple .appendix { display: none; }
+  .simple.hide-empty .sec.empty, .simple.hide-empty nav li.empty { display: revert; }
+  .simple .sec.optional h3 .t, .simple .f-label.optional { color: inherit; }
+  .simple .f-val { border-left: 0; }
+  .simple .f-label .ph { color: var(--ink-muted); opacity: 0.75; }
   @media (max-width: 900px) {
     .panel { position: static; width: auto; margin: 16px; }
     main { margin: 0 16px; padding: 0 0 40px; }
@@ -129,8 +139,10 @@
 </head>
 <body>
 <aside class="panel">
+  <div class="views" role="group" aria-label="View"><button type="button" data-view="simple">Protocol</button><button type="button" data-view="deep">Deep dive</button></div>
   <h1>The CDISC Pilot, laid out as an ICH M11 protocol</h1>
-  <p class="lede">Nothing here was typed in or reformatted by hand. The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Each Template field's value is the result of a <b>query over the Pilot's graph</b>, following the published HL7 and CDISC mapping statements. Where the Pilot's data is odd, the page shows where and why instead of failing. Click a field to see how its value was found.</p>
+  <p class="lede sv">The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Text and values are found by <b>queries over the Pilot's graph</b>, following the published HL7 and CDISC mapping statements. Grey fields in &lt;…&gt; or […] are Template fields where the graph gives no clear value. Click a field, or switch to <b>Deep dive</b>, to see how it was found and where the Pilot and the mappings do not fit.</p>
+  <p class="lede dv">Nothing here was typed in or reformatted by hand. The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Each Template field's value is the result of a <b>query over the Pilot's graph</b>, following the published HL7 and CDISC mapping statements. Where the Pilot's data is odd, the page shows where and why instead of failing. Click a field to see how its value was found.</p>
   <div class="counters">
     <div><b id="c-one"></b><span>Template fields with one value found</span></div>
     <div><a class="oddlink" href="#oddities"><b id="c-odd"></b><span>fields where an oddity is visible — see the list</span></a></div>
@@ -191,6 +203,24 @@ function valueHtml(f) {
   return `<span class="why">— ${esc(ST[st][1])}</span>`;
 }
 
+// --- the simple view: only values that are one value or several values found; the rest as Template placeholders ---
+const plainHeading = t => t.replace(/[{}]/g, "").replace(/\s*<#>/g, "").trim();
+function simpleValues(f) {
+  if (f.status !== "one" && f.status !== "several") return [];
+  const kept = [];
+  for (const x of f.routes) if (x.candidates) for (const c of x.candidates) if (c.kept && x.status === f.status && c.value.trim()) kept.push(c.value);
+  return [...new Set(kept)];
+}
+function simpleLabel(f) {
+  if (simpleValues(f).length) return esc(f.label);
+  return `<span class="ph">${f.kind === "ControlledTerminology" ? "[" + esc(f.label) + "]" : "&lt;" + esc(f.label) + "&gt;"}</span>`;
+}
+function simpleValue(f) {
+  const v = simpleValues(f);
+  if (!v.length) return "";
+  return v.length === 1 ? `<span class="val">${v[0]}</span>` : `<ul>${v.map(x => `<li class="val">${x}</li>`).join("")}</ul>`;
+}
+
 function routeHtml(f) {
   let h = "";
   if (f.element) h += `<div class="route"><div class="row"><span>M11 element</span><span><a href="${esc(f.element.iri)}" target="_blank" rel="noopener"><code>${esc(lastSeg(f.element.iri))}</code></a> ${esc(f.element.label)}</span><span>Template field</span><span>${esc(f.label)} · page ${f.page}${f.optional ? " · optional" : ""}${f.conditional ? " · conditional" : ""}</span></div></div>`;
@@ -225,7 +255,7 @@ function routeHtml(f) {
 }
 
 const doc = document.getElementById("doc"), toc = document.getElementById("toc");
-doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 Template, filled from the CDISC Pilot (DDF-RA v4.0.0)</div><h2>Clinical Protocol</h2><p>${C.sections} M11 sections in Template order. ${C.placed} receive a section from the Pilot's M11 document, ${C.text} with text. ${C.fields} Template fields, each followed through the published mappings.</p></div>`);
+doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 Template, filled from the CDISC Pilot (DDF-RA v4.0.0)</div><h2>Clinical Protocol</h2><p class="dv">${C.sections} M11 sections in Template order. ${C.placed} receive a section from the Pilot's M11 document, ${C.text} with text. ${C.fields} Template fields, each followed through the published mappings.</p><p class="sv">${C.text} of ${C.sections} M11 sections with text from the Pilot; ${D.sections.flatMap(s => s.fields).filter(f => simpleValues(f).length).length} of ${C.fields} Template fields with a value.</p></div>`);
 {
   const O = D.oddities;
   const flinks = fs => fs.map(f => `<a href="#L${f.fid}" data-open="${f.fid}">${esc(f.label)}</a>`).join(", ");
@@ -266,8 +296,8 @@ D.sections.forEach((s, i) => {
   const d = depth(s.num), hasText = s.pilot.some(p => p.text), empty = !s.pilot.length && !s.fields.some(f => ["one","several","not-checked","filtered-out"].includes(f.status));
   const title = s.heading ? s.heading : (s.num ? s.label.slice(s.num.length + 1) : s.label);
   const navCol = hasText ? "var(--one)" : s.pilot.length ? "var(--muted)" : "transparent";
-  toc.insertAdjacentHTML("beforeend", `<li class="d${d}${hasText ? " has-text" : ""}${empty ? " empty" : ""}"><a href="#s${i}"><span class="dot" style="background:${navCol};border:1px solid var(--muted)"></span><span class="num">${esc(s.num)}</span><span>${esc(title)}</span></a></li>`);
-  let h = `<section class="sec d${d}${s.optional ? " optional" : ""}${empty ? " empty" : ""}" id="${s.sid}"><h3><span class="n">${esc(s.num)}</span><span class="t">${esc(title)}</span>${s.optional ? '<span class="flag">optional</span>' : ""}${s.conditional ? '<span class="flag">conditional</span>' : ""}<a class="iri" href="${esc(s.iri)}" target="_blank" rel="noopener">${esc(lastSeg(s.iri))}</a></h3>`;
+  toc.insertAdjacentHTML("beforeend", `<li class="d${d}${hasText ? " has-text" : ""}${empty ? " empty" : ""}"><a href="#s${i}"><span class="dot" style="background:${navCol};border:1px solid var(--muted)"></span><span class="num">${esc(s.num)}</span><span class="dv">${esc(title)}</span><span class="sv">${esc(plainHeading(title))}</span></a></li>`);
+  let h = `<section class="sec d${d}${s.optional ? " optional" : ""}${empty ? " empty" : ""}" id="${s.sid}"><h3><span class="n">${esc(s.num)}</span><span class="t dv">${esc(title)}</span><span class="t sv">${esc(plainHeading(title))}</span>${s.optional ? '<span class="flag">optional</span>' : ""}${s.conditional ? '<span class="flag">conditional</span>' : ""}<a class="iri" href="${esc(s.iri)}" target="_blank" rel="noopener">${esc(lastSeg(s.iri))}</a></h3>`;
   for (const n of s.notes) h += `<div class="note red">The Pilot's section ${esc(n.num)} “${esc(n.title)}” has this section's title; its number places it at ${esc(n.at.split(".").length ? D.sections.find(x => x.iri === n.at).num : "")}.</div>`;
   if (!s.pilot.length) h += `<p class="pl">No section of the Pilot's M11 document reaches this M11 section.</p>`;
   for (const p of s.pilot) {
@@ -280,7 +310,7 @@ D.sections.forEach((s, i) => {
     h += `<div class="fields${s.num ? " compact" : ""}">`;
     for (const f of s.fields) {
       const id = f.fid;
-      h += `<div class="f-label${f.optional ? " optional" : ""}" id="L${id}" data-f="${id}">${esc(f.label)}</div><div class="f-val ${f.status}" data-f="${id}">${valueHtml(f)}</div><div class="route-panel" id="${id}" hidden>${routeHtml(f)}</div>`;
+      h += `<div class="f-label${f.optional ? " optional" : ""}" id="L${id}" data-f="${id}"><span class="dv">${esc(f.label)}</span><span class="sv">${simpleLabel(f)}</span></div><div class="f-val ${f.status}" data-f="${id}"><div class="dv">${valueHtml(f)}</div><div class="sv">${simpleValue(f)}</div></div><div class="route-panel" id="${id}" hidden>${routeHtml(f)}</div>`;
     }
     h += `</div>`;
   }
@@ -304,8 +334,29 @@ doc.addEventListener("click", e => {
   const t = e.target.closest("[data-f]");
   if (!t || e.target.closest("a")) return;
   const p = document.getElementById(t.dataset.f);
+  if (document.body.classList.contains("simple")) {
+    p.hidden = false;
+    setView("deep");
+    document.getElementById("L" + t.dataset.f).scrollIntoView({block: "center"});
+    return;
+  }
   p.hidden = !p.hidden;
 });
+function setView(v) {
+  document.body.classList.toggle("simple", v === "simple");
+  document.querySelectorAll(".views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
+  const u = new URL(location.href);
+  if (v === "deep") u.searchParams.set("view", "deep"); else u.searchParams.delete("view");
+  if (location.protocol !== "about:") history.replaceState(null, "", u);
+}
+document.querySelector(".views").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const top = [...document.querySelectorAll(".sec")].find(s => s.getBoundingClientRect().bottom > 0);
+  setView(b.dataset.view);
+  if (top) top.scrollIntoView();
+});
+setView(new URLSearchParams(location.search).get("view") === "deep" ? "deep" : "simple");
 document.querySelector(".oddlink").addEventListener("click", () => { document.getElementById("oddities").open = true; });
 document.getElementById("hide").addEventListener("change", e => document.body.classList.toggle("hide-empty", e.target.checked));
 document.getElementById("open").addEventListener("change", e => document.querySelectorAll(".route-panel").forEach(p => p.hidden = !e.target.checked));

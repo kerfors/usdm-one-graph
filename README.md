@@ -95,6 +95,13 @@ twice. The study's two protocol documents share no content item; five M11 sectio
 hold identical copies of the other document's text under different identifiers, found
 by comparing the text and labelled as such.
 
+The page has two views, switched at the top of the side panel. "Protocol" (the
+default) shows only the protocol: the Template headings, the study's text, and the
+fields where the queries find one value or several values; every other field is shown
+as the Template's grey placeholder, `<…>` or `[…]`. "Deep dive" (`protocol.html?view=deep`)
+is the page described above, with the colours, the oddity list and how each value was
+found. Clicking a field in the protocol view opens the deep dive at that field.
+
 The scripts contain no codes or values from the study. Two readings are the page's own
 and are stated on it: a condition clause is run only when it tests a code on the mapped
 object or on its parent through the target path's last hop, and a value is not shown
