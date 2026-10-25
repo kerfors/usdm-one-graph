@@ -183,7 +183,8 @@ CODE_CLAUSE = re.compile(r'^(?:.*/)?(?P<cls>\w+)/@(?P<attr>\w+)/Code/@(?P<f>code
 
 
 def read_condition(cond, target_cls, hop):
-    """Run a code clause on the mapped object, or on its parent through the target path's last hop."""
+    """Run a code clause on the mapped object (of the class the target path's last hop names, else the
+    attribute's domain), or on its parent through the target path's last hop."""
     clauses = []
     for part in [p.strip() for p in cond.split(" | ") if p.strip()]:
         if "sectionNumber" in part:
@@ -191,7 +192,7 @@ def read_condition(cond, target_cls, hop):
             continue
         m = CODE_CLAUSE.match(part)
         on = None
-        if m and m.group("cls") in chain(target_cls):
+        if m and m.group("cls") in chain(hop["cls"] if hop else target_cls):
             on = "s"
         elif m and hop and m.group("cls") in chain(hop["pcls"]):
             on = "parent"
@@ -217,7 +218,7 @@ def last_hop(target, attr):
             if re.fullmatch(r"\w+", pcls) and role.startswith("@"):
                 q = prop(pcls, role[1:])
                 if q is not None:
-                    return {"text": f"{pcls}/{role}/{cls}", "prop": str(q), "pcls": pcls}
+                    return {"text": f"{pcls}/{role}/{cls}", "prop": str(q), "pcls": pcls, "cls": cls}
             return None
     return None
 
