@@ -80,7 +80,7 @@ attrs_of = defaultdict(list)
 for a, c in attr_class.items():
     attrs_of[c].append(a)
 
-# --- the study's protocol sections (step 6) ------------------------------------------
+# --- the study's protocol sections (step 5) ------------------------------------------
 contents = sorted((n for n in nodes.values() if n["kind"] == "content"),
                   key=lambda n: [int(p) if p.isdigit() else 0 for p in n["num"].rstrip(".").split(".")])
 
@@ -114,7 +114,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   :root {
     --ground: #0F1729; --panel: rgba(24, 34, 56, 0.95); --panel-edge: #2A3652;
     --text: #E6EAF2; --muted: #8A94AB; --amber: #F2B441;
-    --m11: #F2B441; --usdm: #B58CFF; --both: #4FC3C8; --one: #E07A9A; --ncit: #7EE0E4; --study: #8FA0C9;
+    --m11: #F2B441; --usdm: #B58CFF; --both: #4FC3C8; --one: #E07A9A; --study: #8FA0C9;
     --ok: #7ED491; --bad: #FF6B6B;
     --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
     --serif: "IBM Plex Serif", Georgia, serif;
@@ -163,28 +163,25 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   .clabel.dim { fill: #5E6680; transition: fill 600ms ease; }
   svg[data-step="1"] .clabel.dim, svg[data-step="2"] .clabel.dim { fill: #CDBDF5; }
   .count { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
-  .nlabel { font-family: var(--mono); font-size: 10.5px; fill: var(--ncit); paint-order: stroke; stroke: #0F1729; stroke-width: 3px; }
   .sub, .legend, .srcnote { font-family: var(--sans); font-size: 10.5px; fill: var(--muted); }
   .srcnote { fill: var(--amber); }
   .pick { font-family: var(--sans); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: #0F1729; stroke-width: 4px; }
-  .bridges, .ncit, .bars rect, .bars line, .bars text { transition: opacity 600ms ease, fill 600ms ease; }
-  svg[data-step="4"] .bridges { opacity: 0.12; }
-  svg[data-step="5"] .ncit text { opacity: 0; }
-  svg[data-step="6"] .bridges, svg[data-step="6"] .ncit, svg[data-step="7"] .bridges, svg[data-step="7"] .ncit { opacity: 0.06; }
-  svg[data-step="6"] .bars rect:not(.srcbar), svg[data-step="6"] .bars line, svg[data-step="6"] .bars text:not(.srccount),
-  svg[data-step="7"] .bars rect:not(.srcbar), svg[data-step="7"] .bars line, svg[data-step="7"] .bars text:not(.srccount) { opacity: 0.25; }
-  svg[data-step="6"] .srcbar, svg[data-step="7"] .srcbar { fill: var(--amber); }
-  svg[data-step="6"] .srccount, svg[data-step="7"] .srccount { fill: var(--amber); }
+  .bridges, .bars rect, .bars line, .bars text { transition: opacity 600ms ease, fill 600ms ease; }
+  svg[data-step="5"] .bridges, svg[data-step="6"] .bridges { opacity: 0.06; }
+  svg[data-step="5"] .bars rect:not(.srcbar), svg[data-step="5"] .bars line, svg[data-step="5"] .bars text:not(.srccount),
+  svg[data-step="6"] .bars rect:not(.srcbar), svg[data-step="6"] .bars line, svg[data-step="6"] .bars text:not(.srccount) { opacity: 0.25; }
+  svg[data-step="5"] .srcbar, svg[data-step="6"] .srcbar { fill: var(--amber); }
+  svg[data-step="5"] .srccount, svg[data-step="6"] .srccount { fill: var(--amber); }
   .plabel { font-family: var(--sans); font-size: 10px; fill: #B8C3DE; paint-order: stroke; stroke: #0F1729; stroke-width: 3px; transition: opacity 600ms ease; }
-  svg[data-step="6"] .chap { opacity: 0.3; }
-  svg[data-step="7"] .plabel { opacity: 0.4; }
-  svg[data-step="8"] .srcbar, svg[data-step="8"] .srccount { fill: var(--amber); }
-  svg[data-step="8"] .leg7 { opacity: 0; }
+  svg[data-step="5"] .chap { opacity: 0.3; }
+  svg[data-step="6"] .plabel { opacity: 0.4; }
+  svg[data-step="7"] .srcbar, svg[data-step="7"] .srccount { fill: var(--amber); }
+  svg[data-step="7"] .leg7 { opacity: 0; }
   .grow path, .grow line { stroke-dasharray: 1; stroke-dashoffset: 1; }
   .grow rect { opacity: 0; }
-  svg[data-step="8"] .grow path { animation: grow 1.4s ease-out 0.3s forwards; }
-  svg[data-step="8"] .grow line.late { animation: grow 0.6s ease-out 1.6s forwards; }
-  svg[data-step="8"] .grow rect.late { animation: fadein 0.5s ease-out 2.1s forwards; }
+  svg[data-step="7"] .grow path { animation: grow 1.4s ease-out 0.3s forwards; }
+  svg[data-step="7"] .grow line.late { animation: grow 0.6s ease-out 1.6s forwards; }
+  svg[data-step="7"] .grow rect.late { animation: fadein 0.5s ease-out 2.1s forwards; }
   @keyframes grow { to { stroke-dashoffset: 0; } }
   @keyframes fadein { to { opacity: 1; } }
   .pdot { transition: fill 600ms ease, r 600ms ease; }
@@ -209,7 +206,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   <h1>ICH M11 and USDM, Coming Together</h1>
   <p class="lede">Published files, loaded as they are. Where they share identifiers, they join by themselves.</p>
   <div class="counters">
-    <div><b id="c-triples">0</b><span>statements loaded</span></div>
+    <div><b id="c-triples">0</b><span>triples loaded</span></div>
     <div><b id="c-bridges">0</b><span>links from shared identifiers</span></div>
     <div class="zero"><b>0</b><span>lines of join code</span></div>
   </div>
@@ -229,29 +226,28 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
 <script>
 (function () {
   const D = JSON.parse(document.getElementById('data').textContent);
-  const S = D.steps.slice(0, 5).concat([{ triples: 0, bridges: 0 }], [D.steps[5]], [{ triples: 0, bridges: 0 }]);
+  const S = D.steps.slice(0, 4).concat([{ triples: 0, bridges: 0 }], [D.steps[4]], [{ triples: 0, bridges: 0 }]);
   const fmt = n => n.toLocaleString('en-GB');
   const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.getElementById('svg');
-  const st7 = S[6].status;
+  const st7 = S[5].status;
   const R7 = {};
 
   const file = s => '<a class="file" href="' + s.url + '" target="_blank" rel="noopener">' + s.file + '</a>';
   const SAY = [
-    ['ICH M11', () => file(S[0]) + '<br>' + fmt(S[0].triples) + ' statements. 160 sections and 270 elements, each with its own identifier.'],
+    ['ICH M11', () => file(S[0]) + '<br>' + fmt(S[0].triples) + ' triples. 160 sections and 270 elements, each with its own identifier.'],
     ['USDM v4', () => file(S[1]) + '<br>A second file, made independently. Nothing links the two yet.'],
     ['HL7 and CDISC mappings', () => file(S[2]) + '<br>Each statement names an M11 element and a USDM attribute, so <b>' + S[2].bridges + ' links</b> appear. No matching. <b style="color:var(--both)">' + S[2].both + '</b> are stated by both CDISC and HL7, <b style="color:var(--one)">' + (S[2].bridges - S[2].both) + '</b> by only one of them.'],
-    ['NCIt', () => 'Both files tag their terms with NCIt codes. Where the code is the same, they meet: <b>' + S[3].bridges + ' links</b> that were there all along. Solid: the mappings say the same (' + S[3].agree + '). Dashed: no mapping does (' + (S[3].bridges - S[3].agree) + ').'],
-    ['The study\'s definitions', () => file(S[4]) + '<br>' + fmt(S[4].nodes) + ' objects find their ' + S[4].classes_used + ' USDM classes by themselves, through the JSON-LD context.'],
-    ['The study\'s protocol', () => 'The same study file also holds its protocol: ' + S[6].contents + ' sections, part of the highlighted bar. Each has a number and a title, as text. None carries an ICH M11 identifier, so nothing links them to the spine.'],
-    ['Protocol sections → ICH M11 sections', () => 'Each of the ' + S[6].contents + ' protocol sections placed on an ICH M11 section. With no identifier, the section number and title are all there is to go on. <b style="color:var(--ok)">' + st7.agree + '</b> land on the same M11 section by both, <b style="color:var(--bad)">' + st7.differ + '</b> on two different ones, ' + (S[6].contents - st7.agree - st7.differ) + ' on one or none (grey). Hover one to see where.'],
+    ['The study\'s definitions', () => file(S[3]) + '<br>' + fmt(S[3].nodes) + ' objects find their ' + S[3].classes_used + ' USDM classes by themselves, through the JSON-LD context.'],
+    ['The study\'s protocol', () => 'The same study file also holds its protocol: ' + S[5].contents + ' sections, part of the highlighted bar. Each has a number and a title, as text. None carries an ICH M11 identifier, so nothing links them to the spine.'],
+    ['Protocol sections → ICH M11 sections', () => 'Each of the ' + S[5].contents + ' protocol sections placed on an ICH M11 section. With no identifier, the section number and title are all there is to go on. <b style="color:var(--ok)">' + st7.agree + '</b> land on the same M11 section by both, <b style="color:var(--bad)">' + st7.differ + '</b> on two different ones, ' + (S[5].contents - st7.agree - st7.differ) + ' on one or none (grey). Hover one to see where.'],
     ['Protocol sections → the study\'s definitions', () => 'From the ' + st7.agree + ' placed sections, through their M11 elements, to the study\'s definitions: ' + R7.els + ' elements reach <b style="color:var(--both)">' + R7.attrs + ' specific USDM attributes</b>, and the objects in the study that hold them. ' + R7.gen + ' reach only NarrativeContentItem.text (grey), which does not say what the text is. Hover a section to see the values. With M11 identifiers in the study\'s definitions, these would all be links: a question for USDM 4.1. <a class="on" href="protocol.html">The same graph, laid out as an ICH M11 protocol →</a>']
   ];
   const ol = document.getElementById('steps');
   SAY.forEach((s, i) => {
     const li = document.createElement('li');
-    li.innerHTML = '<div class="h"><b>' + ['1', '2', '3', '4', '5', '6', '7a', '7b'][i] + '</b><span>' + s[0] + '</span></div><div class="say">' + s[1]() + '</div>';
+    li.innerHTML = '<div class="h"><b>' + ['1', '2', '3', '4', '5', '6a', '6b'][i] + '</b><span>' + s[0] + '</span></div><div class="say">' + s[1]() + '</div>';
     li.addEventListener('click', () => go(i + 1));
     ol.appendChild(li);
   });
@@ -298,7 +294,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     const W = svg.clientWidth, H = svg.clientHeight;
     const top = 70, bottom = H - 30;
     const xA = 70, xB = W * 0.32, xC = W * 0.64, xD = W * 0.80;
-    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8'].forEach((k, i) => { layers[k] = el('g', { class: 'step', 'data-step': i + 1 }); });
+    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7'].forEach((k, i) => { layers[k] = el('g', { class: 'step', 'data-step': i + 1 }); });
     const L = layers;
     // column heads
     el('text', { x: xB, y: 40, 'text-anchor': 'middle', class: 'colhead' }, L.g1).textContent = 'ICH M11';
@@ -308,8 +304,8 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     });
     el('text', { x: xC, y: 40, 'text-anchor': 'middle', class: 'colhead' }, L.g2).textContent = 'USDM v4';
     el('text', { x: xC, y: 56, 'text-anchor': 'middle', class: 'sub' }, L.g3).textContent = 'dots: attributes M11 elements link to · dim: no link from M11';
-    el('text', { x: xD + 60, y: 40, 'text-anchor': 'middle', class: 'colhead' }, L.g5).textContent = 'the study\'s definitions';
-    el('text', { x: xA - 30, y: 40, class: 'colhead' }, L.g6).textContent = 'the study\'s protocol';
+    el('text', { x: xD + 60, y: 40, 'text-anchor': 'middle', class: 'colhead' }, L.g4).textContent = 'the study\'s definitions';
+    el('text', { x: xA - 30, y: 40, class: 'colhead' }, L.g5).textContent = 'the study\'s protocol';
 
     // ICH M11 spine
     const sy = {}; const n = D.spine.length; const step = (bottom - top) / (n - 1);
@@ -353,7 +349,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
       c.attrs.forEach((a, j) => {
         ay[a] = y; ax[a] = xC - 9 - j * 7;
         const A = D.attrs[a];
-        const dot2 = el('circle', { cx: ax[a], cy: y, r: 2.6, fill: '#D9C6FF' }, A.step === 4 ? L.g4 : L.g3);
+        const dot2 = el('circle', { cx: ax[a], cy: y, r: 2.6, fill: '#D9C6FF' }, L.g3);
         hover(dot2, () => tipFor('USDM attribute · usdm_v4.ttl', a, A.label, A.definition ? '<p>' + esc(A.definition) + '</p>' : ''), a);
       });
     });
@@ -367,33 +363,10 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
       hover(p, () => tipFor('mapping statement · m11-usdm.sssom.ttl', null, D.elements[b.e].label + ' → ' + D.attrs[b.a].label, '<p class="m">' + esc(b.p) + '</p>'));
     });
 
-    // NCIt (step 4): the same NCIt code in both files. Each concept sits between the columns, labelled;
-    // solid when the mappings say the same, dashed when no mapping statement does.
-    const ncit = el('g', { class: 'ncit' }, L.g4);
-    const mx = xB + (xC - xB) * 0.4;
-    const placed = D.concepts.map(c => {
-      const ends = c.ends.map(id => ({ id, m11: sy[id] !== undefined, y: sy[id] !== undefined ? sy[id] : (ay[id] !== undefined ? ay[id] : cy[id]),
-                                        x: sy[id] !== undefined ? xB + 9 : (ax[id] !== undefined ? ax[id] - 3 : xC - 3) }));
-      return { c, ends, y: ends.reduce((s, e) => s + e.y, 0) / ends.length };
-    }).sort((a, b) => a.y - b.y);
-    for (let i = 1; i < placed.length; i++) if (placed[i].y - placed[i - 1].y < 18) placed[i].y = placed[i - 1].y + 18;
-    placed.forEach(({ c, ends, y }) => {
-      const term = (ends.find(e => e.m11) || ends[0]);
-      const name = D.elements[term.id] ? D.elements[term.id].label : c.label;
-      ends.forEach(e => el('path', { d: curve(e.x, e.y, mx, y), fill: 'none', stroke: css('--ncit'), 'stroke-width': 1.6,
-        'stroke-opacity': 0.95, 'stroke-dasharray': c.agrees ? '' : '4 3' }, ncit));
-      const dot = el('circle', { cx: mx, cy: y, r: 4.5, fill: c.agrees ? css('--ncit') : '#0F1729', stroke: css('--ncit'), 'stroke-width': 1.6 }, ncit);
-      const t = el('text', { x: mx + 9, y: y + 3.5, class: 'nlabel' }, ncit);
-      const full = c.label.replace('NCIt ', '') + '  ' + name;
-      const room = Math.floor((xC - 40 - (mx + 9)) / 6.4);
-      t.textContent = full.length > room ? full.slice(0, room - 1) + '…' : full;
-      hover(dot, () => tipFor('NCIt concept · used in both files', c.id, c.label + ' · ' + name, '<p class="m">' + (c.agrees ? 'the mappings say the same' : 'no mapping statement says this') + '</p>'), c.id);
-    });
-
-    // the study's definitions (step 5): one bar per class, length by object count
+    // the study's definitions (step 4): one bar per class, length by object count
     const maxN = Math.max(...D.classes.map(c => c.study));
     const barMax = W - xD - 170;
-    const bars = el('g', { class: 'bars' }, L.g5);
+    const bars = el('g', { class: 'bars' }, L.g4);
     let srcY = null, srcX = null, srcN = 0; const barAt = {};
     D.classes.forEach(c => {
       if (!c.study) return;
@@ -405,10 +378,10 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
       const r = el('rect', { x: xD, y: y - 2.5, width: w, height: 5, rx: 1.5, fill: css('--study'), class: src ? 'srcbar' : '' }, bars);
       el('text', { x: xD + w + 5, y: y + 3.5, class: 'count' + (src ? ' srccount' : '') }, bars).textContent = fmt(c.study);
       hover(r, () => tipFor('the study\'s objects · CDISC_Pilot_Study.json', null, fmt(c.study) + ' × ' + c.label, '<p class="m">each says rdf:type ' + esc(D.usdm + c.label) + '</p>' +
-        (src ? '<p class="m">' + D.contents.length + ' of them are the sections of its M11-shaped protocol (step 6)</p>' : '') + objList(c.label)));
+        (src ? '<p class="m">' + D.contents.length + ' of them are the sections of its M11-shaped protocol (step 5)</p>' : '') + objList(c.label)));
     });
 
-    // the gap (step 6): the same study's protocol sections. They carry a number and a title as text, no M11 identifier,
+    // the gap (step 5): the same study's protocol sections. They carry a number and a title as text, no M11 identifier,
     // so the only way to place them in ICH M11 is to match that text. Lines are dashed: matched, not linked.
     // what an M11 section reaches through the mappings: its elements (and those of its subsections) -> bridges -> attributes -> classes
     const lvl = id => { const m = D.sections[id].label.match(/^[\d.]+/); return m ? m[0].replace(/\.$/, '').split('.').length : 1; };
@@ -443,25 +416,25 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     const agreed = reach([...new Set(D.contents.filter(c => c.status === 'agree').map(c => c.by_number))]);
     R7.attrs = new Set(agreed.br.map(b => b.a)).size; R7.classes = agreed.classes.length;
     R7.els = new Set(agreed.br.map(b => b.e)).size; const spec = new Set(agreed.br.map(b => b.e)); R7.gen = new Set(agreed.gen.map(b => b.e).filter(e => !spec.has(e))).size;
-    ol.children[7].querySelector('.say').innerHTML = SAY[7][1]();
-    drawReach(agreed, css('--both'), 0.9, 1.5, el('g', { class: 'grow' }, L.g8));
+    ol.children[6].querySelector('.say').innerHTML = SAY[6][1]();
+    drawReach(agreed, css('--both'), 0.9, 1.5, el('g', { class: 'grow' }, L.g7));
 
     const nC = D.contents.length, ktop = top + 64, kstep = (bottom - ktop) / (nC - 1);
     const COL = { agree: css('--ok'), differ: css('--bad'), 'number-only': '#6B7898', 'title-only': '#6B7898', 'title-ambiguous': '#4A5470', neither: '#4A5470' };
-    el('text', { x: xA - 30, y: 56, class: 'sub' }, L.g6).textContent = 'number + title, as text';
-    if (srcY !== null) el('text', { x: srcX, y: srcY + 3.5, class: 'srcnote' }, L.g6).textContent = '← ' + nC + ' are its protocol';
-    const st = D.steps[5].status;
+    el('text', { x: xA - 30, y: 56, class: 'sub' }, L.g5).textContent = 'number + title, as text';
+    if (srcY !== null) el('text', { x: srcX, y: srcY + 3.5, class: 'srcnote' }, L.g5).textContent = '← ' + nC + ' are its protocol';
+    const st = D.steps[4].status;
     [[css('--ok'), 'same section by number and title', st.agree], [css('--bad'), 'number and title: two sections', st.differ],
      ['#6B7898', 'only one, or neither, matches', D.contents.length - st.agree - st.differ]].forEach(([c, t, n], i) => {
-      el('circle', { cx: xA - 26, cy: top + 6 + i * 14, r: 3, fill: c, class: 'leg7' }, L.g7);
-      el('text', { x: xA - 18, y: top + 9.5 + i * 14, class: 'legend leg7' }, L.g7).textContent = n + '  ' + t;
+      el('circle', { cx: xA - 26, cy: top + 6 + i * 14, r: 3, fill: c, class: 'leg7' }, L.g6);
+      el('text', { x: xA - 18, y: top + 9.5 + i * 14, class: 'legend leg7' }, L.g6).textContent = n + '  ' + t;
     });
-    [[css('--ok'), st.agree + ' placed on an M11 section (7a)'], [css('--both'), '→ reach a specific USDM attribute'], ['#6B7898', '→ reach only NarrativeContentItem.text']].forEach(([c, t], i) => {
-      el('line', { x1: xA - 30, y1: top + 6 + i * 14, x2: xA - 22, y2: top + 6 + i * 14, stroke: c, 'stroke-width': 2, 'stroke-dasharray': i ? '' : '2 2' }, L.g8);
-      el('text', { x: xA - 18, y: top + 9.5 + i * 14, class: 'legend' }, L.g8).textContent = t;
+    [[css('--ok'), st.agree + ' placed on an M11 section (6a)'], [css('--both'), '→ reach a specific USDM attribute'], ['#6B7898', '→ reach only NarrativeContentItem.text']].forEach(([c, t], i) => {
+      el('line', { x1: xA - 30, y1: top + 6 + i * 14, x2: xA - 22, y2: top + 6 + i * 14, stroke: c, 'stroke-width': 2, 'stroke-dasharray': i ? '' : '2 2' }, L.g7);
+      el('text', { x: xA - 18, y: top + 9.5 + i * 14, class: 'legend' }, L.g7).textContent = t;
     });
-    const gapLines = el('g', { class: 'gaplines' }, L.g7);
-    const pick = el('g', { class: 'step', 'data-step': 6 });
+    const gapLines = el('g', { class: 'gaplines' }, L.g6);
+    const pick = el('g', { class: 'step', 'data-step': 5 });
     L.pick = pick;
     const plabs = [];
     D.contents.forEach((c, i) => {
@@ -472,7 +445,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
       if (c.by_title && c.by_title !== c.by_number) tgt.push([c.by_title, css('--ok'), 'by title']);
       const paths = tgt.map(([sid, color]) => el('path', { d: curve(xA + 4, y, xB - 4, sy[sid]), fill: 'none', stroke: color,
         'stroke-dasharray': '3 3', 'stroke-width': bad ? 1.4 : 0.7, 'stroke-opacity': bad ? 0.95 : 0.22, class: c.status === 'agree' ? 'agree' : '' }, gapLines));
-      const dot = el('circle', { cx: xA, cy: y, r: 2.4, fill: css('--study'), class: 'pdot hit' + (c.status === 'agree' ? '' : ' nomatch') }, L.g6);
+      const dot = el('circle', { cx: xA, cy: y, r: 2.4, fill: css('--study'), class: 'pdot hit' + (c.status === 'agree' ? '' : ' nomatch') }, L.g5);
       const lvl1 = !c.num.replace(/\.$/, '').includes('.');
       if (lvl1) {
         dot.dataset.r0 = 3.6; dot.setAttribute('r', 3.6);
@@ -483,12 +456,12 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
       const card = () => {
         let h = tipFor('protocol section · CDISC_Pilot_Study.json', c.id, c.num + '  ' + c.title,
           '<p class="m">a NarrativeContent: its number and title are text; no ICH M11 identifier</p>');
-        if (cur < 7) return h;
-        h += '<p class="sec">7a · placed on ICH M11 section</p>' + (tgt.length ? tgt.map(([sid, color, how]) => '<p class="row"><span style="color:' + color + '">' + how + '</span> → ' + esc(D.sections[sid].label) + '</p>').join('')
+        if (cur < 6) return h;
+        h += '<p class="sec">6a · placed on ICH M11 section</p>' + (tgt.length ? tgt.map(([sid, color, how]) => '<p class="row"><span style="color:' + color + '">' + how + '</span> → ' + esc(D.sections[sid].label) + '</p>').join('')
           : '<p class="m">' + (c.status === 'title-ambiguous' ? 'title fits two ICH M11 sections' : 'no ICH M11 section by number or title') + '</p>');
-        if (cur < 8 || !tgt.length) return h;
+        if (cur < 7 || !tgt.length) return h;
         const r = reach(tgt.map(t => t[0]));
-        h += '<p class="sec">7b · reaches in the study\'s definitions</p>';
+        h += '<p class="sec">6b · reaches in the study\'s definitions</p>';
         if (!r.br.length) h += '<p class="m">no specific USDM attribute</p>';
         r.br.slice(0, 5).forEach(b => {
           const a = b.a.slice(D.usdm.length), vs = byAttr[a] || [];
@@ -503,9 +476,9 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
       dot.addEventListener('mousemove', ev => showTip(ev, card()));
       dot.addEventListener('mouseenter', () => {
         el('text', { x: xA + 10, y: y - 6, class: 'pick', fill: '#E6EAF2' }, pick).textContent = c.num + '  ' + c.title;
-        if (cur < 7) { el('text', { x: xA + 10, y: y + 9, class: 'pick', fill: '#8A94AB' }, pick).textContent = 'text only: no ICH M11 identifier'; return; }
+        if (cur < 6) { el('text', { x: xA + 10, y: y + 9, class: 'pick', fill: '#8A94AB' }, pick).textContent = 'text only: no ICH M11 identifier'; return; }
         if (!tgt.length) el('text', { x: xA + 10, y: y + 9, class: 'pick', fill: '#8A94AB' }, pick).textContent = c.status === 'title-ambiguous' ? 'title fits two ICH M11 sections' : 'no ICH M11 section by number or title';
-        if (cur >= 8) tgt.forEach(([sid]) => drawReach(reach([sid]), css('--both'), 0.95, 1.6, pick));
+        if (cur >= 7) tgt.forEach(([sid]) => drawReach(reach([sid]), css('--both'), 0.95, 1.6, pick));
         paths.forEach(p => { p.dataset.w = p.getAttribute('stroke-width'); p.dataset.o = p.getAttribute('stroke-opacity'); p.setAttribute('stroke-width', 2.2); p.setAttribute('stroke-opacity', 1); });
         tgt.forEach(([sid, color, how], j) => {
           const t = el('text', { x: xB + 16, y: sy[sid] + 3.5 + (j && Math.abs(sy[sid] - sy[tgt[0][0]]) < 12 ? 13 : 0), class: 'pick', fill: color }, pick);
@@ -524,8 +497,8 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     ly[ly.length - 1] = Math.min(ly[ly.length - 1], bottom + 4);
     for (let i = ly.length - 2; i >= 0; i--) ly[i] = Math.min(ly[i], ly[i + 1] - 11);
     plabs.forEach(([y0, t], i) => {
-      if (Math.abs(ly[i] - y0) > 2) el('line', { x1: xA + 4, y1: y0, x2: xA + 8, y2: ly[i], stroke: '#5E6680', 'stroke-width': 0.8 }, L.g6);
-      el('text', { x: xA + 10, y: ly[i] + 3.5, class: 'plabel' }, L.g6).textContent = t;
+      if (Math.abs(ly[i] - y0) > 2) el('line', { x1: xA + 4, y1: y0, x2: xA + 8, y2: ly[i], stroke: '#5E6680', 'stroke-width': 0.8 }, L.g5);
+      el('text', { x: xA + 10, y: ly[i] + 3.5, class: 'plabel' }, L.g5).textContent = t;
     });
     svg.appendChild(L.labels);
     svg.appendChild(L.pick);
@@ -538,7 +511,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   function apply() {
     svg.setAttribute('data-step', cur);
     Object.values(layers).forEach(g => g.classList.toggle('hidden', +g.getAttribute('data-step') > cur));
-    svg.querySelectorAll('.pdot').forEach(d => { d.setAttribute('fill', cur >= 7 ? d.dataset.c : css('--study')); d.setAttribute('r', cur >= 7 ? d.dataset.r : (d.dataset.r0 || 2.4)); });
+    svg.querySelectorAll('.pdot').forEach(d => { d.setAttribute('fill', cur >= 6 ? d.dataset.c : css('--study')); d.setAttribute('r', cur >= 6 ? d.dataset.r : (d.dataset.r0 || 2.4)); });
   }
   function go(k) {
     cur = k;
@@ -554,7 +527,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   bBack.addEventListener('click', () => { if (cur > 0) go(cur - 1); });
   window.addEventListener('resize', draw);
   document.fonts.ready.then(draw);
-  draw(); go(['1', '2', '3', '4', '5', '6', '7a', '7b'].indexOf(new URLSearchParams(location.search).get('step')) + 1);
+  draw(); go(['1', '2', '3', '4', '5', '6a', '6b'].indexOf(new URLSearchParams(location.search).get('step')) + 1);
   window.M11Story = { go };
 })();
 </script>

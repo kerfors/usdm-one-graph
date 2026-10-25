@@ -32,7 +32,7 @@ recap*, not a deliverable of usdm-rdf.
 Live page: https://kerfors.github.io/usdm-one-graph/m11/
 
 Published files about ICH M11 and USDM v4, loaded one at a time and as they are, in
-seven steps (the last in two parts, 7a and 7b). Where two files use the same identifier, they join by themselves; where they
+six steps (the last in two parts, 6a and 6b). Where two files use the same identifier, they join by themselves; where they
 only share text, you are back to matching strings.
 
 1. `m11-rdf.ttl` ([m11-rdf](https://github.com/kerfors/m11-rdf) v0.3.0): ICH M11
@@ -41,12 +41,11 @@ only share text, you are back to matching strings.
 3. `m11-usdm.sssom.ttl` (m11-rdf v0.3.0): the HL7 and CDISC M11-to-USDM mapping
    statements; 224 links appear between the islands, because each statement names both
    identifiers. 210 are stated by both CDISC and HL7, 14 by only one (11 HL7, 3 CDISC).
-4. NCIt: 10 concepts both files already share, so 10 links were there all along.
-5. The study's definitions: `CDISC_Pilot_Study.json` (DDF-RA v4.0.0), read through the
+4. The study's definitions: `CDISC_Pilot_Study.json` (DDF-RA v4.0.0), read through the
    usdm-rdf JSON-LD context; 1,952 objects attach to their 57 USDM classes.
-6. The study's protocol: the same file holds 155 protocol sections. Each has a section
+5. The study's protocol: the same file holds 155 protocol sections. Each has a section
    number and a title, as text, and no ICH M11 identifier, so nothing links them.
-7. a. Protocol sections → ICH M11 sections: the only way is to match the number and
+6. a. Protocol sections → ICH M11 sections: the only way is to match the number and
    title strings. 87 land on the same M11 section by both, 16 on two different ones,
    52 on one or none.
    b. Protocol sections → the study's definitions: from the 87, the step 3 mappings
@@ -56,18 +55,18 @@ only share text, you are back to matching strings.
    attribute belongs to an abstract class (`SyntaxTemplate-text`), the values are held
    by several classes, and the mapping does not say which.
 
-   With M11 section identifiers in the study's definitions, 7a and 7b would be links
+   With M11 section identifiers in the study's definitions, 6a and 6b would be links
    like step 3; that is left as a question for USDM 4.1.
 
 `index.html?step=3` opens a given step; the last step links to the third page.
 
 The example study is not fully consistent or populated; it is used because it is real.
-Every M11, USDM and NCIt identifier shown resolves.
+Every M11 and USDM identifier shown resolves.
 
 `m11/lift_m11.py` fetches the inputs from pinned URLs (checked by SHA-256), parses each
 file into its own graph and writes `m11/graph.json`, including the study's values for
 the attributes the mappings name; links between files come only from
-shared IRIs, except the string matching of step 7a, which is shown on purpose.
+shared IRIs, except the string matching of step 6a, which is shown on purpose.
 `m11/build_m11_html.py` inlines that into `m11/index.html`.
 
 ## Third page: the CDISC Pilot as an ICH M11 protocol

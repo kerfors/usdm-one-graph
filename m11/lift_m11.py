@@ -5,10 +5,9 @@ the page loads them:
   1. m11-rdf.ttl          ICH M11 sections and elements (m11-rdf v0.3.0)
   2. usdm_v4.ttl          the USDM v4 model (usdm-rdf v0.7.0)
   3. m11-usdm.sssom.ttl   the HL7 and CDISC M11-to-USDM mapping statements (m11-rdf v0.3.0)
-  4. (no new file)        NCIt concepts that 1 and 2 already share
-  5. CDISC_Pilot_Study.json, read through usdm_v4.context.jsonld (DDF-RA v4.0.0, usdm-rdf v0.7.0)
+  4. CDISC_Pilot_Study.json, read through usdm_v4.context.jsonld (DDF-RA v4.0.0, usdm-rdf v0.7.0)
 Links between files are never computed by matching: they exist because two files use the
-same IRI. The one exception is step 6 on the page, which shows on purpose what matching
+same IRI. The one exception is step 6a on the page, which shows on purpose what matching
 strings (section numbers, titles) would give where no shared IRI exists.
 Every input is fetched from a pinned URL and checked by SHA-256.
 """
@@ -149,34 +148,7 @@ steps.append({"file": "m11-usdm.sssom.ttl", "url": url, "publisher": "the HL7 FH
               "both": sum(1 for v in pairs.values() if len(v) == 2), "elements": len({e for e, _ in pairs})})
 print("3:", steps[-1])
 
-# --- 4. NCIt concepts files 1 and 2 already share ------------------------------------------
-m_side = defaultdict(set)
-for e, c in gm.subject_objects(M11.concept):
-    if str(c).startswith(OBO) and (e, RDF.type, M11.Element) in gm:
-        m_side[str(c)].add(str(e))
-u_side = defaultdict(set)
-for x, c in gu.subject_objects(SKOS.exactMatch):
-    if str(c).startswith(OBO) and str(x).startswith(USDM):
-        u_side[str(c)].add(x)
-shared = sorted(set(m_side) & set(u_side))
-agree = 0
-for c in shared:
-    nodes[c] = {"id": c, "kind": "concept", "step": 4, "label": "NCIt " + c[len(OBO):]}
-    for e in m_side[c]:
-        links.append({"s": e, "t": c, "kind": "concept", "step": 4, "p": "m11:concept (m11-rdf.ttl)"})
-    for x in u_side[c]:
-        if (x, RDF.type, OWL.Class) not in gu:
-            attr_node(x, 4)
-        links.append({"s": str(x), "t": c, "kind": "concept", "step": 4, "p": "skos:exactMatch (usdm_v4.ttl)"})
-        if any((e, str(x)) in pairs for e in m_side[c]):
-            agree += 1
-            nodes[c]["agrees"] = True
-steps.append({"file": None, "url": None, "publisher": "already in files 1 and 2: both anchor their terms to NCIt",
-              "triples": 0, "nodes": sum(1 for n in nodes.values() if n["step"] == 4), "bridges": len(shared),
-              "agree": agree, "m_concepts": len(m_side), "u_concepts": len(u_side)})
-print("4:", steps[-1])
-
-# --- 5. a study, read as it is ------------------------------------------------------------
+# --- 4. a study, read as it is ------------------------------------------------------------
 path, url = fetch("pilot")
 document = json.loads(path.read_text())
 if document.get("usdmVersion") != "4.0.0":
@@ -192,8 +164,8 @@ for s, o in gp.subject_objects(RDF.type):
         continue
     if str(o) not in nodes:
         raise ValueError(f"study object typed with {o}, not a class in usdm_v4.ttl")
-    nodes[str(s)] = {"id": str(s), "kind": "inst", "step": 5, "label": str(o)[len(USDM):], "cls": str(o)[len(USDM):]}
-    links.append({"s": str(s), "t": str(o), "kind": "type", "step": 5, "p": "rdf:type"})
+    nodes[str(s)] = {"id": str(s), "kind": "inst", "step": 4, "label": str(o)[len(USDM):], "cls": str(o)[len(USDM):]}
+    links.append({"s": str(s), "t": str(o), "kind": "type", "step": 4, "p": "rdf:type"})
     typed += 1
     classes_used.add(str(o))
 # the study's own values for the attributes the mappings name, plus each object's name, so the page can show them
@@ -211,9 +183,9 @@ for k, n in nodes.items():
 steps.append({"file": "CDISC_Pilot_Study.json", "url": url, "context": curl,
               "publisher": "CDISC (DDF-RA v4.0.0 example), read through the usdm-rdf JSON-LD context",
               "triples": len(gp), "nodes": typed, "bridges": typed, "classes_used": len(classes_used)})
-print("5:", steps[-1])
+print("4:", steps[-1])
 
-# --- 6. the gap: the study's protocol sections and M11 share no identifier -----------------
+# --- 5. the gap: the study's protocol sections and M11 share no identifier -----------------
 sec_by_num = {n["num"]: k for k, n in nodes.items() if n["kind"] == "section" and n["num"]}
 sec_by_title = defaultdict(set)
 for k, n in nodes.items():
@@ -249,13 +221,13 @@ for nc, num, title in rows:
     node.update({"kind": "content", "num": str(num), "title": str(title), "status": st,
                  "by_number": n_sec, "by_title": t_sec})
     if n_sec:
-        links.append({"s": str(nc), "t": n_sec, "kind": "differ" if st == "differ" else "bynumber", "step": 6,
+        links.append({"s": str(nc), "t": n_sec, "kind": "differ" if st == "differ" else "bynumber", "step": 5,
                       "p": 'string match: section number "' + str(num) + '"'})
     if t_sec and t_sec != n_sec:
-        links.append({"s": str(nc), "t": t_sec, "kind": "bytitle", "step": 6, "p": "string match: section title"})
+        links.append({"s": str(nc), "t": t_sec, "kind": "bytitle", "step": 5, "p": "string match: section title"})
 steps.append({"file": None, "url": None, "publisher": "no shared identifier: only strings",
               "triples": 0, "nodes": 0, "bridges": 0, "contents": len(rows), "status": dict(status)})
-print("6:", steps[-1])
+print("5:", steps[-1])
 
 out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "obo": OBO, "steps": steps,
        "nodes": list(nodes.values()), "links": links}
