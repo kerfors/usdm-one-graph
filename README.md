@@ -98,12 +98,13 @@ by comparing the text and labelled as such.
 
 The page has two views, switched at the top of the side panel. "Protocol" (the
 default) shows only the protocol: the Template headings, the study's text, and the
-fields where the queries find one value or several values; every other field is shown
-as the Template's grey placeholder, `<…>` or `[…]`. "Deep dive" (`protocol.html?view=deep`)
+fields where the queries find one value or several values, each under its M11 element's
+name; an element with no clear value shows a grey dash, and Template fields that realise
+no M11 element are left out. "Deep dive" (`protocol.html?view=deep`)
 is the page described above, with the colours, the oddity list and how each value was
 found. Clicking a field in the protocol view opens the deep dive at that field.
-Headings the Template repeats (<#>) are repeated per objective, numbered by the study's
-identifiers. In the deep dive each route starts with its hops between identifiers,
+Headings the Template repeats (<#>) are repeated per instance (in the Template: the
+objectives), numbered by the study's identifiers. In the deep dive each route starts with its hops between identifiers,
 numbered by the steps of the second page; a side-panel block lists the files behind the
 page.
 

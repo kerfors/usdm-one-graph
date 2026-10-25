@@ -125,10 +125,12 @@
   .simple .dv, .simple .counters, .simple .legend-box, .simple label.toggle, .simple .pl, .simple .note,
   .simple #oddities, .simple .flag, .simple .sec h3 a.iri, .simple .route-panel, .simple .appendix { display: none; }
   .simple.hide-empty .sec.empty, .simple.hide-empty nav li.empty { display: revert; }
-  .simple .sec.optional h3 .t, .simple .f-label.optional { color: inherit; }
+  .simple .sec.optional h3 .t { color: inherit; }
+  .simple .f-label, .simple .f-label.optional { color: var(--ink-muted); }
   .simple .f-val { border-left: 0; }
-  .simple .f-label .ph { color: var(--ink-muted); opacity: 0.75; }
-  .simple .f-label:has(.ph), .simple .f-label:has(.ph) + .f-val { cursor: default; text-decoration: none; }
+  .simple .f-val .ph { color: var(--ink-muted); opacity: 0.75; }
+  .simple .f-label:has(+ .f-val .ph), .simple .f-val:has(.ph) { cursor: default; text-decoration: none; }
+  .simple .noel { display: none; }
   .graph-box { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
   .graph-box summary { cursor: pointer; color: var(--text); margin: 0 0 6px; }
   .graph-box ol { list-style: none; margin: 0 0 6px; padding: 0; }
@@ -158,7 +160,7 @@
 <aside class="panel">
   <div class="views" role="group" aria-label="View"><button type="button" data-view="simple">Protocol</button><button type="button" data-view="deep">Deep dive</button></div>
   <h1>The CDISC Pilot, laid out as an ICH M11 protocol</h1>
-  <p class="lede sv">The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Text and values are found by <b>queries over the Pilot's graph</b>, following the published HL7 and CDISC mapping statements. Grey fields in &lt;…&gt; or […] are Template fields where the graph gives no clear value. Click a filled field, or switch to <b>Deep dive</b>, to see how it was found and where the Pilot and the mappings do not fit.</p>
+  <p class="lede sv">The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Text and values are found by <b>queries over the Pilot's graph</b>, following the published HL7 and CDISC mapping statements. A grey — marks an M11 element the graph finds no clear value for. Click a filled field, or switch to <b>Deep dive</b>, to see how it was found and where the Pilot and the mappings do not fit.</p>
   <p class="lede dv">Nothing here was typed in or reformatted by hand. The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Each Template field's value is the result of a <b>query over the Pilot's graph</b>, following the published HL7 and CDISC mapping statements. Where the Pilot's data is odd, the page shows where and why instead of failing. Click a field to see how its value was found.</p>
   <div class="counters">
     <div><b id="c-one"></b><span>Template fields with one value found</span></div>
@@ -240,12 +242,14 @@ function simpleValues(f) {
   for (const x of f.routes) if (x.candidates) for (const c of x.candidates) if (c.kept && x.status === f.status && c.value.trim()) kept.push(c.value);
   return [...new Set(kept)];
 }
-function simpleLabel(f, v = simpleValues(f)) {
-  if (v.length) return esc(f.label);
-  return `<span class="ph">${f.kind === "ControlledTerminology" ? "[" + esc(f.label) + "]" : "&lt;" + esc(f.label) + "&gt;"}</span>`;
+// Protocol view: the M11 element's name on the left (m11-rdf carries no universal Template text, so a
+// placeholder alone, e.g. <#/%> or [Yes/No], does not say what it asks); the value on the right, or a muted dash
+// where the graph finds no clear value.
+function simpleLabel(f) {
+  return esc(f.element ? f.element.label : f.label);
 }
 function simpleValue(f, v = simpleValues(f)) {
-  if (!v.length) return "";
+  if (!v.length) return `<span class="ph">—</span>`;
   return v.length === 1 ? `<span class="val">${v[0]}</span>` : `<ul>${v.map(x => `<li class="val">${x}</li>`).join("")}</ul>`;
 }
 // Repeating headings (<#>): the instances are the study objects behind the non-empty values of the field whose
@@ -380,7 +384,7 @@ D.sections.forEach((s, i) => {
     h += `<div class="fields${s.num ? " compact" : ""}">`;
     for (const f of s.fields) {
       const id = f.fid;
-      h += `<div class="f-label${f.optional ? " optional" : ""}" id="L${id}" data-f="${id}"><span class="dv">${esc(f.label)}</span><span class="sv">${simpleLabel(f)}</span></div><div class="f-val ${f.status}" data-f="${id}"><div class="dv">${valueHtml(f)}</div><div class="sv">${simpleValue(f)}</div></div><div class="route-panel" id="${id}" hidden>${routeHtml(f, s)}</div>`;
+      h += `<div class="f-label${f.optional ? " optional" : ""}${f.element ? "" : " noel"}" id="L${id}" data-f="${id}"><span class="dv">${esc(f.label)}</span><span class="sv">${simpleLabel(f)}</span></div><div class="f-val ${f.status}${f.element ? "" : " noel"}" data-f="${id}"><div class="dv">${valueHtml(f)}</div><div class="sv">${simpleValue(f)}</div></div><div class="route-panel" id="${id}" hidden>${routeHtml(f, s)}</div>`;
     }
     h += `</div>`;
   }
@@ -393,7 +397,7 @@ D.sections.forEach((s, i) => {
     let g = `<section class="sec d${d} sv" id="${s.sid}i${k + 1}"><h3><span class="n">${esc(num)}</span><span class="t">${esc(t)}</span></h3><div class="fields compact">`;
     for (const f of s.fields) {
       const v = instanceValues(f, o);
-      g += `<div class="f-label" data-f="${f.fid}">${simpleLabel(f, v)}</div><div class="f-val" data-f="${f.fid}">${simpleValue(f, v)}</div>`;
+      g += `<div class="f-label${f.element ? "" : " noel"}" data-f="${f.fid}">${simpleLabel(f)}</div><div class="f-val${f.element ? "" : " noel"}" data-f="${f.fid}">${simpleValue(f, v)}</div>`;
     }
     doc.insertAdjacentHTML("beforeend", g + "</div></section>");
   });
@@ -417,7 +421,7 @@ doc.addEventListener("click", e => {
   if (!t || e.target.closest("a")) return;
   const p = document.getElementById(t.dataset.f);
   if (document.body.classList.contains("simple")) {
-    if ((t.classList.contains("f-label") ? t : t.previousElementSibling).querySelector(".ph")) return;
+    if ((t.classList.contains("f-label") ? t.nextElementSibling : t).querySelector(".ph")) return;
     p.hidden = false;
     setView("deep");
     document.getElementById("L" + t.dataset.f).scrollIntoView({block: "center"});
