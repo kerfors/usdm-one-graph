@@ -199,6 +199,11 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   .tip .iri { font-family: var(--mono); font-size: 11px; color: var(--amber); word-break: break-all; margin: 0 0 4px; }
   .tip p { margin: 0 0 4px; }
   .tip .m { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .tip.pinned { pointer-events: auto; overflow-y: auto; border-color: var(--amber); }
+  .tip a { color: var(--amber); text-decoration: none; }
+  .tip a:hover { text-decoration: underline; }
+  .tip .pin { font-family: var(--mono); font-size: 10px; color: var(--muted); margin: 8px 0 0; }
+  .tip:not(.pinned) .pin { display: none; }
   @media (max-width: 900px) { .panel { bottom: auto; max-height: 50vh; width: calc(100vw - 40px); } #stage { left: 0; top: 50vh; } }
 </style>
 
@@ -216,7 +221,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   </div>
   <ol class="steps" id="steps"></ol>
   <div class="spacer"></div>
-  <p class="fine">The identifiers are the work, done once and in public: <a href="https://w3id.org/m11-rdf/" target="_blank" rel="noopener">m11-rdf</a>, <a href="https://w3id.org/cdisc/usdm/v4/" target="_blank" rel="noopener">usdm-rdf</a>. The example study is not fully consistent; it is real. Hover anything for its identifier; click to open it.</p>
+  <p class="fine">The identifiers are the work, done once and in public: <a href="https://w3id.org/m11-rdf/" target="_blank" rel="noopener">m11-rdf</a>, <a href="https://w3id.org/cdisc/usdm/v4/" target="_blank" rel="noopener">usdm-rdf</a>. The example study is not fully consistent; it is real. Hover anything for its identifier; click to pin its card and open the links on it.</p>
   <p class="fine">Draft, not normative. ICH M11 © ICH (<a href="https://www.ich.org/page/legal-mentions" target="_blank" rel="noopener">Legal Mentions</a>); ICH M11 Terminology, NCI EVS, CC BY 4.0; USDM, mapping and pilot study, CDISC DDF-RA, CC BY 4.0; HL7 mapping CC0. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="protocol.html">the Pilot as an M11 protocol</a> · <a href="https://w3id.org/m11-rdf/slides/" target="_blank" rel="noopener">slides</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>
 </aside>
 <div id="stage"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
@@ -257,15 +262,26 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   const layers = {};
   const tip = document.getElementById('tip');
   // the detail card sits in the lower right corner; it moves to the upper right when the pointer is under it
+  // click pins the card (as on the first page): it stays, and the pointer can reach its links
+  let pinned = null;
+  const PIN = '<p class="pin">pinned - click it again or the background to release</p>';
+  function unpin() { pinned = null; tip.classList.remove('pinned'); tip.hidden = true; }
+  function pin(target, ev, html) {
+    if (pinned === target) { unpin(); return; }
+    pinned = null; showTip(ev, html); tip.innerHTML += PIN; pinned = target; tip.classList.add('pinned');
+  }
+  svg.addEventListener('click', ev => { if (pinned && !ev.target.closest('.hit')) unpin(); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && pinned) unpin(); });
   function showTip(ev, html) {
+    if (pinned) return;
     tip.innerHTML = html; tip.hidden = false;
     tip.classList.toggle('up', ev.clientX > window.innerWidth - 420 && ev.clientY > window.innerHeight - tip.offsetHeight - 40);
   }
   function hover(target, html, href) {
     target.classList.add('hit');
     target.addEventListener('mousemove', ev => showTip(ev, html()));
-    target.addEventListener('mouseleave', () => { tip.hidden = true; });
-    if (href) target.addEventListener('click', () => window.open(href, '_blank', 'noopener'));
+    target.addEventListener('mouseleave', () => { if (!pinned) tip.hidden = true; });
+    target.addEventListener('click', ev => pin(target, ev, html()));
   }
   const byAttr = {}, byCls = {};
   D.objs.forEach(o => { (byCls[o.cls] = byCls[o.cls] || []).push(o); Object.entries(o.vals).forEach(([k, v]) => (byAttr[k] = byAttr[k] || []).push({ id: o.id, v })); });
@@ -286,11 +302,11 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
       return '<p class="row">' + esc(o.id) + ' · <span class="v">' + esc(nameOf(o)) + '</span>' + (other ? '<br><span class="a">' + esc(other[0]) + '</span> <span class="v">' + esc(other[1]) + '</span>' : '') + '</p>';
     }).join('') + (os.length > 6 ? '<p class="m">+ ' + (os.length - 6) + ' more</p>' : '');
   };
-  const tipFor = (kind, iri, title, more) => '<p class="k">' + kind + '</p>' + (iri ? '<p class="iri">' + esc(iri) + '</p>' : '') + '<p><b>' + esc(title) + '</b></p>' + (more || '');
+  const tipFor = (kind, iri, title, more) => '<p class="k">' + kind + '</p>' + (iri ? '<p class="iri">' + (iri.startsWith('https://w3id.org/') ? '<a href="' + esc(iri) + '" target="_blank" rel="noopener">' + esc(iri) + '</a>' : esc(iri)) + '</p>' : '') + '<p><b>' + esc(title) + '</b></p>' + (more || '');
 
   function draw() {
     svg.innerHTML = '';
-    tip.hidden = true;
+    unpin();
     const W = svg.clientWidth, H = svg.clientHeight;
     const top = 70, bottom = H - 30;
     const xA = 70, xB = W * 0.32, xC = W * 0.64, xD = W * 0.80;
@@ -474,6 +490,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
         return h;
       };
       dot.addEventListener('mousemove', ev => showTip(ev, card()));
+      dot.addEventListener('click', ev => pin(dot, ev, card()));
       dot.addEventListener('mouseenter', () => {
         el('text', { x: xA + 10, y: y - 6, class: 'pick', fill: '#E6EAF2' }, pick).textContent = c.num + '  ' + c.title;
         if (cur < 6) { el('text', { x: xA + 10, y: y + 9, class: 'pick', fill: '#8A94AB' }, pick).textContent = 'text only: no ICH M11 identifier'; return; }
@@ -486,7 +503,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
         });
       });
       dot.addEventListener('mouseleave', () => {
-        tip.hidden = true;
+        if (!pinned) tip.hidden = true;
         paths.forEach(p => { p.setAttribute('stroke-width', p.dataset.w); p.setAttribute('stroke-opacity', p.dataset.o); });
         pick.innerHTML = '';
       });
@@ -514,7 +531,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     svg.querySelectorAll('.pdot').forEach(d => { d.setAttribute('fill', cur >= 6 ? d.dataset.c : css('--study')); d.setAttribute('r', cur >= 6 ? d.dataset.r : (d.dataset.r0 || 2.4)); });
   }
   function go(k) {
-    cur = k;
+    cur = k; unpin();
     [...ol.children].forEach((li, i) => { li.className = i + 1 < k ? 'done' : i + 1 === k ? 'now' : ''; });
     let t = 0, b = 0; S.slice(0, k).forEach(s => { t += s.triples; b += s.bridges; });
     document.getElementById('c-triples').textContent = fmt(t);
