@@ -45,21 +45,22 @@ only share text, you are back to matching strings.
 3. `m11-usdm.sssom.ttl` (m11-rdf v0.4.0): the HL7 and CDISC M11-to-USDM mapping
    statements; 224 links appear between the islands, because each statement names both
    identifiers. 210 are stated by both CDISC and HL7, 14 by only one (11 HL7, 3 CDISC).
-4. The study's definitions: `CDISC_Pilot_Study.json` (DDF-RA v4.0.0), read through the
+4. The study's structured data: `CDISC_Pilot_Study.json` (DDF-RA v4.0.0), read through the
    usdm-rdf JSON-LD context; 1,952 objects attach to their 57 USDM classes.
-5. The study's protocol: the same file holds 155 protocol sections. Each has a section
+5. The study's protocol text: the same file holds its protocol text in two documents;
+   the one labelled "M11" is used, with 155 sections. Each has a section
    number and a title, as text, and no ICH M11 identifier, so nothing links them.
 6. a. Protocol sections → ICH M11 sections: the only way is to match the number and
    title strings. 87 land on the same M11 section by both, 16 on two different ones,
    52 on one or none.
-   b. Protocol sections → the study's definitions: from the 87, the step 3 mappings
+   b. Protocol sections → the study's structured data: from the 87, the step 3 mappings
    carry on. 38 M11 elements reach 25 specific USDM attributes and the study objects
    that hold them; 118 reach only `NarrativeContentItem.text`, generic text that does
    not say what it is. Hovering a section shows the study's own values. Where the
    attribute belongs to an abstract class (`SyntaxTemplate-text`), the values are held
    by several classes, and the mapping does not say which.
 
-   With M11 section identifiers in the study's definitions, 6a and 6b would be links
+   With M11 section identifiers in the study's structured data, 6a and 6b would be links
    like step 3; that is left as a question for USDM 4.1.
 
 `index.html?step=3` opens a given step; the last step links to the third page.

@@ -157,7 +157,8 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   svg { width: 100%; height: 100%; display: block; }
   .step { transition: opacity 600ms ease; }
   svg:not([data-step]) .step, .step.hidden { opacity: 0; pointer-events: none; }
-  .colhead { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--muted); }
+  .colhead { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--muted); transition: fill 400ms ease; }
+  .colhead.hl, .legend.hl { fill: var(--amber); font-weight: 600; }
   .chap { font-family: var(--sans); font-size: 10.5px; fill: var(--muted); paint-order: stroke; stroke: #0F1729; stroke-width: 3px; }
   .clabel { font-family: var(--mono); font-size: 10px; fill: #CDBDF5; }
   .clabel.dim { fill: #5E6680; transition: fill 600ms ease; }
@@ -244,10 +245,10 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     ['ICH M11', () => file(S[0]) + '<br>' + fmt(S[0].triples) + ' triples. 160 sections and 270 elements, each with its own identifier.'],
     ['USDM v4', () => file(S[1]) + '<br>A second file, made independently. Nothing links the two yet.'],
     ['HL7 and CDISC mappings', () => file(S[2]) + '<br>A separate mapping set, published next to the M11 identifiers and pointing at them. Each statement names an M11 element and a USDM attribute, so <b>' + S[2].bridges + ' links</b> appear. No matching. <b style="color:var(--both)">' + S[2].both + '</b> are stated by both CDISC and HL7, <b style="color:var(--one)">' + (S[2].bridges - S[2].both) + '</b> by only one of them.'],
-    ['The study\'s definitions', () => file(S[3]) + '<br>' + fmt(S[3].nodes) + ' objects find their ' + S[3].classes_used + ' USDM classes by themselves, through the JSON-LD context.'],
-    ['The study\'s protocol', () => 'The same study file also holds its protocol text, in two documents. The one labelled "M11" is used here: ' + S[5].contents + ' sections, part of the highlighted bar. Each has a number and a title, as text. None carries an ICH M11 identifier, so nothing links them to the spine.'],
+    ['The study\'s structured data', () => file(S[3]) + '<br>' + fmt(S[3].nodes) + ' objects find their ' + S[3].classes_used + ' USDM classes by themselves, through the JSON-LD context.'],
+    ['The study\'s protocol text', () => 'The same study file also holds its protocol text, in two documents. The one labelled "M11" is used here: ' + S[5].contents + ' sections, part of the highlighted bar. Each has a number and a title, as text. None carries an ICH M11 identifier, so nothing links them to the spine.'],
     ['Protocol sections → ICH M11 sections', () => 'Each of the ' + S[5].contents + ' protocol sections placed on an ICH M11 section. With no identifier, the section number and title are all there is to go on. <b style="color:var(--ok)">' + st7.agree + '</b> land on the same M11 section by both, <b style="color:var(--bad)">' + st7.differ + '</b> on two different ones, ' + (S[5].contents - st7.agree - st7.differ) + ' on one or none (grey). Hover one to see where.'],
-    ['Protocol sections → the study\'s definitions', () => 'From the ' + st7.agree + ' placed sections, through their M11 elements, to the study\'s definitions: ' + R7.els + ' elements reach <b style="color:var(--both)">' + R7.attrs + ' specific USDM attributes</b>, and the objects in the study that hold them. ' + R7.gen + ' reach only NarrativeContentItem.text (grey), which does not say what the text is. Hover a section to see the values. With M11 identifiers in the study\'s definitions, these would all be links: a question for USDM 4.1. <a class="on" href="protocol.html">The same graph, laid out as an ICH M11 protocol →</a>']
+    ['Protocol sections → the study\'s structured data', () => 'From the ' + st7.agree + ' placed sections, through their M11 elements, to the study\'s structured data: ' + R7.els + ' elements reach <b style="color:var(--both)">' + R7.attrs + ' specific USDM attributes</b>, and the objects in the study that hold them. ' + R7.gen + ' reach only NarrativeContentItem.text (grey), which does not say what the text is. Hover a section to see the values. With M11 identifiers in the study\'s structured data, these would all be links: a question for USDM 4.1. <a class="on" href="protocol.html">The same graph, laid out as an ICH M11 protocol →</a>']
   ];
   const ol = document.getElementById('steps');
   SAY.forEach((s, i) => {
@@ -312,16 +313,17 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     const xA = 70, xB = W * 0.32, xC = W * 0.64, xD = W * 0.80;
     ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7'].forEach((k, i) => { layers[k] = el('g', { class: 'step', 'data-step': i + 1 }); });
     const L = layers;
-    // column heads
-    el('text', { x: xB, y: 40, 'text-anchor': 'middle', class: 'colhead' }, L.g1).textContent = 'ICH M11';
+    // column heads: always shown, so the layout is visible from the start; each step highlights its own
+    const heads = el('g', { class: 'heads' });
+    el('text', { x: xB, y: 40, 'text-anchor': 'middle', class: 'colhead', 'data-hl': '1 6' }, heads).textContent = 'ICH M11';
     [[css('--both'), 'stated by CDISC and HL7'], [css('--one'), 'stated by only one of them']].forEach(([c, t], i) => {
       el('line', { x1: xB + 20, y1: 52 + i * 12, x2: xB + 30, y2: 52 + i * 12, stroke: c, 'stroke-width': 2 }, L.g3);
-      el('text', { x: xB + 34, y: 55.5 + i * 12, class: 'legend' }, L.g3).textContent = t;
+      el('text', { x: xB + 34, y: 55.5 + i * 12, class: 'legend', 'data-hl': '3' }, L.g3).textContent = t;
     });
-    el('text', { x: xC, y: 40, 'text-anchor': 'middle', class: 'colhead' }, L.g2).textContent = 'USDM v4';
+    el('text', { x: xC, y: 40, 'text-anchor': 'middle', class: 'colhead', 'data-hl': '2' }, heads).textContent = 'USDM v4';
     el('text', { x: xC, y: 56, 'text-anchor': 'middle', class: 'sub' }, L.g3).textContent = 'dots: attributes M11 elements link to · dim: no link from M11';
-    el('text', { x: xD + 60, y: 40, 'text-anchor': 'middle', class: 'colhead' }, L.g4).textContent = 'the study\'s definitions';
-    el('text', { x: xA - 30, y: 40, class: 'colhead' }, L.g5).textContent = 'the study\'s protocol';
+    el('text', { x: xD + 60, y: 40, 'text-anchor': 'middle', class: 'colhead', 'data-hl': '4 7' }, heads).textContent = 'the study: structured data';
+    el('text', { x: xA - 30, y: 40, class: 'colhead', 'data-hl': '5 6 7' }, heads).textContent = 'the study: protocol text';
 
     // ICH M11 spine
     const sy = {}; const n = D.spine.length; const step = (bottom - top) / (n - 1);
@@ -477,7 +479,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
           : '<p class="m">' + (c.status === 'title-ambiguous' ? 'title fits two ICH M11 sections' : 'no ICH M11 section by number or title') + '</p>');
         if (cur < 7 || !tgt.length) return h;
         const r = reach(tgt.map(t => t[0]));
-        h += '<p class="sec">6b · reaches in the study\'s definitions</p>';
+        h += '<p class="sec">6b · reaches in the study\'s structured data</p>';
         if (!r.br.length) h += '<p class="m">no specific USDM attribute</p>';
         r.br.slice(0, 5).forEach(b => {
           const a = b.a.slice(D.usdm.length), vs = byAttr[a] || [];
@@ -527,6 +529,8 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   const bNext = document.getElementById('btn-next'), bBack = document.getElementById('btn-back');
   function apply() {
     svg.setAttribute('data-step', cur);
+    // the column heads (and the step-3 legend) for what this step adds or joins
+    svg.querySelectorAll('[data-hl]').forEach(t => t.classList.toggle('hl', t.dataset.hl.split(' ').includes(String(cur))));
     Object.values(layers).forEach(g => g.classList.toggle('hidden', +g.getAttribute('data-step') > cur));
     svg.querySelectorAll('.pdot').forEach(d => { d.setAttribute('fill', cur >= 6 ? d.dataset.c : css('--study')); d.setAttribute('r', cur >= 6 ? d.dataset.r : (d.dataset.r0 || 2.4)); });
   }
