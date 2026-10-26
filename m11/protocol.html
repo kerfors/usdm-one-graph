@@ -130,7 +130,7 @@
   .simple .f-val { border-left: 0; }
   .simple .f-val .ph { color: var(--ink-muted); opacity: 0.75; }
   .simple .src { font: 500 11px var(--sans); color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; border-left: 3px solid var(--sect); padding: 1px 0 1px 8px; margin: 10px 0 4px; }
-  .simple .f-label:has(+ .f-val .ph), .simple .f-val:has(.ph) { cursor: default; text-decoration: none; }
+  .simple .f-label, .simple .f-val, .simple .f-label:hover { cursor: default; text-decoration: none; }
   .simple .noel { display: none; }
   .graph-box { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
   .graph-box summary { cursor: pointer; color: var(--text); margin: 0 0 6px; }
@@ -161,7 +161,7 @@
 <aside class="panel">
   <div class="views" role="group" aria-label="View"><button type="button" data-view="simple">Protocol</button><button type="button" data-view="deep">Deep dive</button></div>
   <h1>The CDISC Pilot, laid out as an ICH M11 protocol</h1>
-  <p class="lede sv">The CDISC Pilot read from a <b>graph</b>: the ICH M11 Template as m11-rdf renders it, the published HL7 and CDISC mappings, USDM v4 and the study, brought together by shared identifiers. A grey — marks an M11 element the graph finds no clear value for. Click a filled field, or switch to <b>Deep dive</b>, to see how it was found and where the Pilot and the mappings do not fit.</p>
+  <p class="lede sv">The CDISC Pilot read from a <b>graph</b>: the ICH M11 Template as m11-rdf renders it, the published HL7 and CDISC mappings, USDM v4 and the study, brought together by shared identifiers. A grey — marks an M11 element the graph finds no clear value for. Switch to <b>Deep dive</b> to see how each value was found and where the Pilot and the mappings do not fit.</p>
   <p class="lede dv">Nothing here was typed in or reformatted by hand. The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Each Template field's value is the result of a <b>query over the graph</b>, following the published HL7 and CDISC mapping statements. Where the Pilot's data is odd, the page shows where and why instead of failing. Click a field to see how its value was found.</p>
   <div class="counters">
     <div><b id="c-one"></b><span>Template fields with one value found</span></div>
@@ -432,13 +432,7 @@ doc.addEventListener("click", e => {
   const t = e.target.closest("[data-f]");
   if (!t || e.target.closest("a")) return;
   const p = document.getElementById(t.dataset.f);
-  if (document.body.classList.contains("simple")) {
-    if ((t.classList.contains("f-label") ? t.nextElementSibling : t).querySelector(".ph")) return;
-    p.hidden = false;
-    setView("deep");
-    document.getElementById("L" + t.dataset.f).scrollIntoView({block: "center"});
-    return;
-  }
+  if (document.body.classList.contains("simple")) return;  // the Protocol view is static
   p.hidden = !p.hidden;
 });
 function setView(v) {

@@ -109,7 +109,7 @@ shows the study's own protocol text, marked as such, only where the queries find
 structured value in it; where they do, the text is left out and a line says so; an element with no clear value shows a grey dash, and Template fields that realise
 no M11 element are left out. "Deep dive" (`protocol.html?view=deep`)
 is the page described above, with the colours, the oddity list and how each value was
-found. Clicking a field in the protocol view opens the deep dive at that field.
+found. The protocol view is static; to see how a value was found, switch to the deep dive.
 Headings the Template repeats (<#>) are repeated per instance (in the Template: the
 objectives), numbered by the study's identifiers. In the deep dive each route starts with its hops between identifiers,
 numbered by the steps of the second page; a side-panel block lists the files behind the
