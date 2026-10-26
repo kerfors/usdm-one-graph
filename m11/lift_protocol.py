@@ -354,7 +354,7 @@ for s, sec in sections.items():
                 clauses = read_condition(cond, target_cls, hop) if cond else []
                 route = {"attr": loc(attr, USDM), "cond": cond, "hop": hop["text"] if hop else None,
                          "clauses": [{k: c.get(k) for k in ("text", "kind", "on")} for c in clauses],
-                         "sources": sorted({(r["src"], r["row"]) for r in rs}), "targets": sorted({r["target"] for r in rs})}
+                         "sources": sorted({(r["src"], r["row"], r["iri"]) for r in rs}), "targets": sorted({r["target"] for r in rs})}
                 if any(c["kind"] == "section" for c in clauses):
                     route["status"] = "section-rule"
                 else:

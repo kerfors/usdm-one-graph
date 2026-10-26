@@ -90,7 +90,7 @@ instead of failing or leaving a blank. Full Title, for example, is mapped to the
 (`C99905x1`, `x2`, `x3`), so the condition finds nothing, and all four titles are shown
 with their codes. Of the 281 fields, 16 get one value, 53 show such an oddity, 140 are
 narrative text placed by section number, 6 are mapped to an attribute the study does
-not fill, and 66 have no mapping statement or no M11 element.
+not fill, and 66 have no mapping record or no M11 element.
 
 A list at the top of the page, "Where the Pilot and the mappings do not fit", opened from
 the oddity counter, groups the same results: what each mapping condition asks for and
@@ -101,9 +101,10 @@ hold identical copies of the other document's text under different identifiers, 
 by comparing the text and labelled as such.
 
 The page has two views, switched at the top of the side panel. "Protocol" (the
-default) shows only the protocol: the Template headings, the study's text, and the
-fields where the queries find one value or several values, each under its M11 element's
-name; an element with no clear value shows a grey dash, and Template fields that realise
+default) shows only the protocol: the Template headings and the fields where the
+queries find one value or several values, each under its M11 element's name. A section
+shows the study's own protocol text, marked as such, only where the queries find no
+structured value in it; where they do, the text is left out and a line says so; an element with no clear value shows a grey dash, and Template fields that realise
 no M11 element are left out. "Deep dive" (`protocol.html?view=deep`)
 is the page described above, with the colours, the oddity list and how each value was
 found. Clicking a field in the protocol view opens the deep dive at that field.
