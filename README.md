@@ -27,7 +27,7 @@ jsDelivr.
 This is a demonstration for the article *One graph, three articles - a summer
 recap*, not a deliverable of usdm-rdf.
 
-Pages two and three are one knowledge graph, built up as published files are brought
+Pages two and three are one graph, built up as published files are brought
 together: ICH M11, USDM v4, the HL7 and CDISC mappings, and a study. Page two builds it
 step by step; page three reads a protocol out of it.
 
