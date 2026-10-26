@@ -24,6 +24,7 @@
   .counters b { display: block; font-family: var(--mono); font-weight: 500; font-size: 18px; font-variant-numeric: tabular-nums; }
   .counters span { color: var(--muted); font-size: 11px; line-height: 1.25; display: block; }
   .counters .zero b { color: var(--amber); }
+  .counters .zero.text-join b { color: var(--bad); }
   ol.steps { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; }
   ol.steps li { padding: 7px 9px; border-radius: 4px; color: var(--muted); cursor: pointer; border: 1px solid transparent; }
   ol.steps li:hover { border-color: var(--panel-edge); }
@@ -106,7 +107,7 @@
   <div class="counters">
     <div><b id="c-triples">0</b><span>distinct triples in the merged graph</span></div>
     <div><b id="c-bridges">0</b><span>links from shared identifiers</span></div>
-    <div class="zero"><b>0</b><span>lines of join code</span></div>
+    <div class="zero" id="c-join"><b>0</b><span>lines of join code</span></div>
   </div>
   <div class="nav">
     <button class="btn" id="btn-back" type="button">Back</button>
@@ -432,6 +433,10 @@
     let t = 0, b = 0; S.slice(0, k).forEach(s => { if (s.graph_triples !== undefined) t = s.graph_triples; b += s.bridges; });
     document.getElementById('c-triples').textContent = fmt(t);
     document.getElementById('c-bridges').textContent = fmt(b);
+    // from 6a the page matches text: section number and title strings, not identifiers
+    const j = document.getElementById('c-join');
+    j.classList.toggle('text-join', k >= 6);
+    j.innerHTML = k >= 6 ? '<b>1</b><span>join by matching text: section number and title (6a)</span>' : '<b>0</b><span>lines of join code</span>';
     bNext.textContent = k === 0 ? 'Load the first file' : k < SAY.length ? 'Next' : 'Start again';
     bBack.disabled = k === 0;
     apply();
