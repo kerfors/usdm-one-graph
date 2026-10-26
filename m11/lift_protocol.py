@@ -265,12 +265,14 @@ for nc, num, title, nci in gp.query(P + """
       ?nc usdm:NarrativeContent-sectionNumber ?num ; usdm:NarrativeContent-sectionTitle ?title .
       OPTIONAL { ?nc usdm:NarrativeContent-contentItemId ?nci }
     }""", initBindings={"tn": rdflib.Literal(M11_TEMPLATE)}):
-    text = None
+    text, refs = None, []
     if nci is not None:
         t = gp.value(nci, U["NarrativeContentItem-text"])
         text = resolve(str(t), nci) if t is not None else None
+        # the study objects the text refers to by usdm:ref (top level, as written in the text)
+        refs = sorted({dict(ATTR.findall(m.group(2)))["id"] for m in REF.finditer(str(t)) if m.group(1) == "ref"}) if t is not None else []
     pilot_sections.append({"iri": str(nc), "num": str(num), "title": str(title),
-                           "item": str(nci) if nci is not None else None, "text": text, "shared": []})
+                           "item": str(nci) if nci is not None else None, "text": text, "refs": refs, "shared": []})
 if not pilot_sections:
     raise ValueError(f"no StudyDefinitionDocument with templateName {M11_TEMPLATE!r} and sections")
 

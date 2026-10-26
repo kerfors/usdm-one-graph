@@ -95,8 +95,10 @@ not fill, and 66 have no mapping record or no M11 element.
 A list at the top of the page, "Where the Pilot and the mappings do not fit", opened from
 the oddity counter, groups the same results: what each mapping condition asks for and
 what the study carries instead, codes the study puts in the CDISC code system that are
-not of the form C<digits> (`C99905x1`, "No Concept Code", ...), and text the study holds
-twice. The study's two protocol documents share no content item; five M11 sections
+not of the form C<digits> (`C99905x1`, "No Concept Code", ...), text the study holds
+twice, and section text the mappings read as one element but that refers to other
+elements' values (the study's Title Page text, read as Sponsor Confidentiality Statement,
+is a whole title page built from references to its structured data). The study's two protocol documents share no content item; five M11 sections
 hold identical copies of the other document's text under different identifiers, found
 by comparing the text and labelled as such.
 

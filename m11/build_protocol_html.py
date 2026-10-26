@@ -61,6 +61,19 @@ for f in fields:
                 for x in k["codes"]:
                     g["carries"].add(f"{x['code']} {x['decode']}")
         g["n_all"] = r.get("n_all")
+# section text that the mappings read as one element (section rule), but that refers by usdm:ref to study objects
+# the section's other fields are mapped to: the text repeats other elements' values
+read_as = []
+for sec in data["sections"]:
+    sr = [f for f in sec["fields"] if any(r["status"] == "section-rule" for r in f["routes"])]
+    others = {c["s"][len(data["base"]):] for f in sec["fields"] if f not in sr
+              for r in f["routes"] for c in r.get("candidates", [])}
+    for p in sec["pilot"]:
+        overlap = [x for x in p["refs"] if x in others]
+        if sr and overlap:
+            read_as.append({"sid": sec["sid"], "num": sec["num"], "label": sec["label"],
+                            "p": {k: p[k] for k in ("num", "title", "item")},
+                            "fields": [ref(f) for f in sr], "n_refs": len(p["refs"]), "overlap": overlap})
 ORDER = {"filtered-out": 0, "several": 1, "not-checked": 2}
 data["oddities"] = {
     "routes": [{"status": k[0], "attr": k[1], "clause": k[2], "fields": g["fields"],
@@ -68,6 +81,7 @@ data["oddities"] = {
                for k, g in sorted(groups.items(), key=lambda kv: (ORDER[kv[0][0]], kv[0][1], kv[0][2]))],
     "codes": [{**c, "fields": odd_codes[c["code"]]["fields"] if c["code"] in odd_codes else []} for c in data["codes"]],
     "differ": [{"sid": sec["sid"], "num": sec["num"], "n": n} for sec in data["sections"] for n in sec["notes"]],
+    "read_as": read_as,
     "copies": [{"sid": sec["sid"], "num": sec["num"], "p": {k: p[k] for k in ("num", "title", "item")}, "copies": p["copies"]}
                for sec in data["sections"] for p in sec["pilot"] if p["copies"]],
     "shared": [{"sid": sec["sid"], "num": sec["num"], "p": {k: p[k] for k in ("num", "title")}, "shared": p["shared"]}
@@ -445,6 +459,11 @@ doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 T
   if (O.copies.length) {
     h += `<h4>The same text held twice, under different content items (${O.copies.length})</h4><p>Found by comparing the text; ${O.shared.length} sections share a content item by identifier.</p><ul>`;
     for (const x of O.copies) h += `<li><a href="#${x.sid}">${esc(x.num)}</a> ${esc(x.p.title)} (<code>${esc(pil(x.p.item))}</code>) = ${x.copies.map(c => `${esc(c.template)} ${esc(c.num)} ${esc(c.title)} (<code>${esc(pil(c.item))}</code>)`).join("; ")}</li>`;
+    h += `</ul>`;
+  }
+  if (O.read_as.length) {
+    h += `<h4>Section text the mappings read as one element, but that holds other elements' values (${O.read_as.length})</h4><ul>`;
+    for (const x of O.read_as) h += `<li><a href="#${x.sid}">${esc(x.num || x.label)}</a> Pilot section ${esc(x.p.num)} “${esc(x.p.title)}” (<code>${esc(pil(x.p.item))}</code>): the mappings read its text as ${flinks(x.fields)}. The text refers to ${x.n_refs} study objects; ${x.overlap.length} of them are objects this section's other fields are mapped to (${x.overlap.map(o => "<code>" + esc(o) + "</code>").join(", ")}).</li>`;
     h += `</ul>`;
   }
   if (O.differ.length) {
