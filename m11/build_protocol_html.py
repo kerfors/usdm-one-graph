@@ -102,8 +102,8 @@ html = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pilot Protocol, From the Graph</title>
-<meta name="description" content="The CDISC Pilot laid out as an ICH M11 protocol, every value found by a query over published graphs, with the oddities shown where they are">
+<title>M11 Protocol, From the Graph</title>
+<meta name="description" content="A study laid out as an ICH M11 protocol, every value found by a query over published graphs, with the oddities shown where they are">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -205,6 +205,7 @@ html = r"""<!doctype html>
   .cands tr.dropped td { color: var(--ink-muted); }
   .odd { margin: 14px 0 6px; font-size: 13px; }
   .odd details summary { font-size: 13px; margin-top: 8px; }
+  .odd summary:focus:not(:focus-visible), #oddities:focus:not(:focus-visible) { outline: none; }
   .odd summary { cursor: pointer; font-family: var(--serif); font-size: 17px; font-weight: 500; }
   .odd p { color: var(--ink-muted); margin: 6px 0; }
   .odd h4 { font-family: var(--sans); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin: 12px 0 4px; }
@@ -259,17 +260,17 @@ html = r"""<!doctype html>
 <body>
 <aside class="panel">
   <div class="views" role="group" aria-label="View"><button type="button" data-view="simple">Protocol</button><button type="button" data-view="deep">Deep dive</button></div>
-  <h1>The CDISC Pilot, laid out as an ICH M11 protocol</h1>
-  <p class="lede sv">The CDISC Pilot read from a <b>graph</b>: the ICH M11 Template as m11-rdf renders it, the published HL7 and CDISC mappings, USDM v4 and the study, brought together by shared identifiers. A grey — marks an M11 element the graph finds no clear value for. Switch to <b>Deep dive</b> to see how each value was found and where the Pilot and the mappings do not fit.</p>
-  <p class="lede dv">Nothing here was typed in or reformatted by hand. The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Each Template field's value is the result of a <b>query over the graph</b>, following the published HL7 and CDISC mapping statements. Where the Pilot's data is odd, the page shows where and why instead of failing. Click a field to see how its value was found.</p>
+  <h1>A study laid out as an ICH M11 protocol: <span id="study-name"></span></h1>
+  <p class="lede sv">The study read from a <b>graph</b>: the ICH M11 Template as m11-rdf renders it, the published HL7 and CDISC mappings, USDM v4 and the study, brought together by shared identifiers. A grey — marks an M11 element the graph finds no clear value for. Switch to <b>Deep dive</b> to see how each value was found and where the study and the mappings do not fit.</p>
+  <p class="lede dv">Nothing here was typed in or reformatted by hand. The outline is the <b>ICH M11 Template</b> as m11-rdf renders it. Each Template field's value is the result of a <b>query over the graph</b>, following the published HL7 and CDISC mapping statements. Where the study's data is odd, the page shows where and why instead of failing. Click a field to see how its value was found.</p>
   <div class="counters">
     <div><b id="c-one"></b><span>Template fields with one value found</span></div>
     <div><a class="oddlink" href="#oddities"><b id="c-odd"></b><span>fields where an oddity is visible — see the list</span></a></div>
-    <div><b id="c-text"></b><span>M11 sections with text from the Pilot</span></div>
+    <div><b id="c-text"></b><span>M11 sections with text from the study</span></div>
   </div>
   <details class="graph-box" id="gb"><summary>The graph behind this page</summary><div id="gb-body"></div></details>
   <details class="legend-box"><summary>Field colours</summary><div class="legend" id="legend"></div></details>
-  <label class="toggle"><input type="checkbox" id="hide"> Only sections with something from the Pilot</label>
+  <label class="toggle"><input type="checkbox" id="hide"> Only sections with something from the study</label>
   <label class="toggle"><input type="checkbox" id="open"> Show how every field was found</label>
   <nav><ol id="toc"></ol></nav>
 </aside>
@@ -280,8 +281,8 @@ const ST = {
   "one": ["var(--one)", "one value found"],
   "several": ["var(--several)", "several values, the mapping does not say which"],
   "not-checked": ["var(--unchecked)", "values found, but a condition could not be run"],
-  "filtered-out": ["var(--out)", "the mapping's condition finds nothing in the Pilot"],
-  "none": ["var(--none)", "the mapped attribute has no value in the Pilot"],
+  "filtered-out": ["var(--out)", "the mapping's condition finds nothing in the study"],
+  "none": ["var(--none)", "the mapped attribute has no value in the study"],
   "section-rule": ["var(--sect)", "the section's text, by the mappings' section rule"],
   "unmapped": ["var(--none)", "no mapping record for this element"],
   "no-element": ["var(--none)", "Template field without an M11 element"]
@@ -297,13 +298,14 @@ const pil = iri => iri.slice(D.base.length);
 const depth = num => num ? Math.min(num.split(".").length, 4) : 1;
 
 const C = D.counts, FS = C.field_status;
+document.getElementById("study-name").textContent = D.study_name;
 document.getElementById("c-one").textContent = (FS["one"] || 0) + " / " + C.fields;
 document.getElementById("c-odd").textContent = (FS["several"] || 0) + (FS["not-checked"] || 0) + (FS["filtered-out"] || 0);
 document.getElementById("c-text").textContent = C.text + " / " + C.sections;
 {
   const FILES = [["1", "m11", "ICH M11 Template headings and fields, M11 elements"], ["2", "usdm", "USDM v4 classes and attributes"],
                  ["3", "sssom", "the HL7 and CDISC mapping statements, a separate mapping set that points at the M11 identifiers"], ["4", "pilot", "the study, read through the usdm-rdf JSON-LD context"]];
-  let h = `<p>The same graph as on the M11 and USDM page: four published files, ${D.graph_triples.toLocaleString("en-GB")} distinct triples when merged, brought together by shared identifiers.</p><p>Every hop from a Template field to a value is a link one of these files states, by identifier. The page itself matches text in one place only: placing the Pilot's sections on M11 sections by number and title (6a). Click a field in the Deep dive to see its hops.</p><ol>`;
+  let h = `<p>The same graph as on the M11 and USDM page: four published files, ${D.graph_triples.toLocaleString("en-GB")} distinct triples when merged, brought together by shared identifiers.</p><p>Every hop from a Template field to a value is a link one of these files states, by identifier. The page itself matches text in one place only: placing the study's sections on M11 sections by number and title (6a). Click a field in the Deep dive to see its hops.</p><ol>`;
   for (const [k, key, what] of FILES) {
     const u = D.inputs[key], parts = u.split("/");
     h += `<li><a class="st" href="index.html?step=${k}">${k}</a><span><a href="${esc(u)}" target="_blank" rel="noopener" class="mono">${esc(parts[parts.length - 1])}</a> (${esc(parts[4])} ${esc(parts[5])})<span>${D.triples[key].toLocaleString("en-GB")} triples: ${esc(what)}</span></span></li>`;
@@ -321,7 +323,7 @@ function valueHtml(f) {
   const r = f.routes, st = f.status;
   const kept = [];
   for (const x of r) if (x.candidates) for (const c of x.candidates) if (c.kept && (x.status === st)) kept.push(c.value);
-  const uniq = [...new Set(kept)].map(v => v.trim() ? v : '<i class="why">(empty string in the Pilot)</i>');
+  const uniq = [...new Set(kept)].map(v => v.trim() ? v : '<i class="why">(empty string in the study)</i>');
   if (st === "one" || st === "several" || st === "not-checked") {
     const v = uniq.length === 1 ? `<span class="val">${uniq[0]}</span>` : `<ul>${uniq.map(v => `<li class="val">${v}</li>`).join("")}</ul>`;
     const why = st === "one" ? "" : `<div class="why">${esc(ST[st][1])}</div>`;
@@ -390,7 +392,7 @@ function hopsHtml(f, s, r) {
   h += hop("3", "m11:mappedTo · " + r.sources.map(x => `${esc(x[0])} row ${esc(x[1])}`).join(", ")) + node(`${stepLink("2")}<code>usdm:${esc(r.attr)}</code>`);
   if (r.status === "section-rule") {
     h += hop("6a", "section number or title, as text", true);
-    h += s.pilot.length ? s.pilot.map(p => node(`Pilot section ${esc(p.num)} “${esc(p.title)}”`)).join("") : `<span class="end">no Pilot section placed here</span>`;
+    h += s.pilot.length ? s.pilot.map(p => node(`study section ${esc(p.num)} “${esc(p.title)}”`)).join("") : `<span class="end">no study section placed here</span>`;
   } else {
     h += hop("4", "the same IRI in the study") + node(r.n_all ? `${r.n_kept} of ${r.n_all} study objects kept` : "no study object has it");
   }
@@ -418,7 +420,7 @@ function routeHtml(f, s) {
       <span>Result</span><span><span class="pill" style="background:${ST[r.status][0]}">${esc(ST[r.status][1])}</span>${r.n_all !== undefined ? ` ${r.n_kept} of ${r.n_all} candidates kept` : ""}</span></div>`;
     if (r.query) h += `<pre>${esc(r.query)}</pre>`;
     if (r.candidates && r.candidates.length) {
-      h += `<table class="cands"><thead><tr><th></th><th>Pilot object</th><th>Value</th><th>Codes the condition tests</th></tr></thead><tbody>`;
+      h += `<table class="cands"><thead><tr><th></th><th>Study object</th><th>Value</th><th>Codes the condition tests</th></tr></thead><tbody>`;
       for (const c of r.candidates.slice(0, 12)) {
         const codes = c.codes.map(k => k.codes.map(x => `${esc(x.code)} ${esc(x.decode)}`).join("; ") || "no code").join(" | ");
         h += `<tr class="${c.kept ? "kept" : "dropped"}"><td>${c.kept ? "kept" : "—"}</td><td class="mono">${esc(pil(c.s))}${c.via.length ? "<br>via " + c.via.map(esc).join(", ") : ""}</td><td>${c.kept ? c.value : esc(c.value)}</td><td class="mono">${codes}</td></tr>`;
@@ -432,27 +434,27 @@ function routeHtml(f, s) {
 }
 
 const doc = document.getElementById("doc"), toc = document.getElementById("toc");
-doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 Template, filled from the CDISC Pilot (DDF-RA v4.0.0)</div><h2>Clinical Protocol</h2><p class="dv">${C.sections} M11 sections in Template order. ${C.placed} receive a section from the Pilot's M11 document, ${C.text} with text. ${C.fields} Template fields, each followed through the published mappings.</p><p class="sv">${D.sections.filter(s => s.pilot.some(p => p.text) && !filled(s)).length} of ${C.sections} M11 sections with text from the Pilot; ${D.sections.flatMap(s => s.fields).filter(f => simpleValues(f).length).length} of ${C.fields} Template fields with a value.</p></div>`);
+doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 Template, filled from ${esc(D.study_name)} (${esc(D.inputs.pilot.split("/")[4])} ${esc(D.inputs.pilot.split("/")[5])})</div><h2>Clinical Protocol</h2><p class="dv">${C.sections} M11 sections in Template order. ${C.placed} receive a section from the study's M11 document, ${C.text} with text. ${C.fields} Template fields, each followed through the published mappings.</p><p class="sv">${D.sections.filter(s => s.pilot.some(p => p.text) && !filled(s)).length} of ${C.sections} M11 sections with text from the study; ${D.sections.flatMap(s => s.fields).filter(f => simpleValues(f).length).length} of ${C.fields} Template fields with a value.</p></div>`);
 {
   const O = D.oddities;
   const flinks = fs => fs.map(f => `<a href="#L${f.fid}" data-open="${f.fid}">${esc(f.label)}</a>`).join(", ");
   const HEAD = {"filtered-out": "The mapping's condition finds nothing", "several": "Several values, and the mapping does not say which",
                 "not-checked": "Values found, but a condition could not be run"};
-  let h = `<details class="odd" id="oddities"><summary>Where the Pilot and the mappings do not fit</summary>
-    <p>Grouped from the queries below: what a mapping asks for, what the Pilot carries instead, and the fields it affects. Nothing here is written by hand; another study would give its own list.</p>`;
+  let h = `<details class="odd" id="oddities"><summary>Where the study and the mappings do not fit</summary>
+    <p>Grouped from the queries below: what a mapping asks for, what the study carries instead, and the fields it affects. Nothing here is written by hand; another study would give its own list.</p>`;
   for (const st of ["filtered-out", "several", "not-checked"]) {
     const rs = O.routes.filter(r => r.status === st);
     if (!rs.length) continue;
     h += `<details${st === "filtered-out" ? " open" : ""}><summary><h4 style="display:inline">${esc(HEAD[st])} (${rs.length})</h4></summary><ul>`;
     for (const r of rs) {
       h += `<li><code>usdm:${esc(r.attr)}</code>, ${st === "not-checked" ? "not run: " : st === "several" ? "condition: " : "asks: "}<code>${esc(r.clause)}</code>`;
-      if (r.carries.length && st !== "several") h += `<br><span class="carries">the Pilot carries: ${r.carries.map(esc).join("; ")}</span>`;
+      if (r.carries.length && st !== "several") h += `<br><span class="carries">the study carries: ${r.carries.map(esc).join("; ")}</span>`;
       h += `<br>${flinks(r.fields)}</li>`;
     }
     h += `</ul></details>`;
   }
   if (O.codes.length) {
-    h += `<h4>Codes the Pilot puts in the CDISC code system that are not of the NCIt form C&lt;digits&gt; (${O.codes.length})</h4><ul>`;
+    h += `<h4>Codes the study puts in the CDISC code system that are not of the NCIt form C&lt;digits&gt; (${O.codes.length})</h4><ul>`;
     for (const c of O.codes) h += `<li><code>${esc(c.code)}</code> ${c.decode.map(esc).join("; ")} — ${c.n}× on ${c.attrs.map(a => "<code>usdm:" + esc(a) + "</code>").join(", ")}${c.fields.length ? "<br>" + flinks(c.fields) : ""}</li>`;
     h += `</ul>`;
   }
@@ -463,15 +465,15 @@ doc.insertAdjacentHTML("beforeend", `<div class="cover"><div class="k">ICH M11 T
   }
   if (O.read_as.length) {
     h += `<h4>Section text the mappings read as one element, but that holds other elements' values (${O.read_as.length})</h4><ul>`;
-    for (const x of O.read_as) h += `<li><a href="#${x.sid}">${esc(x.num || x.label)}</a> Pilot section ${esc(x.p.num)} “${esc(x.p.title)}” (<code>${esc(pil(x.p.item))}</code>): the mappings read its text as ${flinks(x.fields)}. The text refers to ${x.n_refs} study objects; ${x.overlap.length} of them are objects this section's other fields are mapped to (${x.overlap.map(o => "<code>" + esc(o) + "</code>").join(", ")}).</li>`;
+    for (const x of O.read_as) h += `<li><a href="#${x.sid}">${esc(x.num || x.label)}</a> study section ${esc(x.p.num)} “${esc(x.p.title)}” (<code>${esc(pil(x.p.item))}</code>): the mappings read its text as ${flinks(x.fields)}. The text refers to ${x.n_refs} study objects; ${x.overlap.length} of them are objects this section's other fields are mapped to (${x.overlap.map(o => "<code>" + esc(o) + "</code>").join(", ")}).</li>`;
     h += `</ul>`;
   }
   if (O.differ.length) {
-    h += `<h4>Pilot sections whose number and title point to different M11 sections (${O.differ.length})</h4><ul>`;
-    for (const x of O.differ) h += `<li>Pilot ${esc(x.n.num)} “${esc(x.n.title)}”: by title <a href="#${x.sid}">${esc(x.num || "this section")}</a></li>`;
+    h += `<h4>Study sections whose number and title point to different M11 sections (${O.differ.length})</h4><ul>`;
+    for (const x of O.differ) h += `<li>Study section ${esc(x.n.num)} “${esc(x.n.title)}”: by title <a href="#${x.sid}">${esc(x.num || "this section")}</a></li>`;
     h += `</ul>`;
   }
-  if (D.unplaced.length) h += `<h4>Pilot sections that reach no M11 section</h4><p>${D.unplaced.length}, listed at the end.</p>`;
+  if (D.unplaced.length) h += `<h4>Study sections that reach no M11 section</h4><p>${D.unplaced.length}, listed at the end.</p>`;
   doc.insertAdjacentHTML("beforeend", h + `</details>`);
 }
 D.sections.forEach((s, i) => {
@@ -482,10 +484,10 @@ D.sections.forEach((s, i) => {
   const inst = instances(s);
   toc.insertAdjacentHTML("beforeend", `<li class="d${d}${hasText ? " has-text" : ""}${svText ? " sv-text" : ""}${empty ? " empty" : ""}${inst.length ? " dv" : ""}"><a href="#s${i}"><span class="dot dv" style="background:${navCol};border:1px solid var(--muted)"></span><span class="dot sv" style="background:${navColSv};border:1px solid var(--muted)"></span><span class="num">${esc(s.num)}</span><span class="dv">${esc(title)}</span><span class="sv">${esc(plainHeading(title))}</span></a></li>`);
   let h = `<section class="sec d${d}${s.optional ? " optional" : ""}${empty ? " empty" : ""}${inst.length ? " dv" : ""}" id="${s.sid}"><h3><span class="n">${esc(s.num)}</span><span class="t dv">${esc(title)}</span><span class="t sv">${esc(plainHeading(title))}</span>${s.optional ? '<span class="flag">optional</span>' : ""}${s.conditional ? '<span class="flag">conditional</span>' : ""}<a class="iri" href="${esc(s.iri)}" target="_blank" rel="noopener">${esc(lastSeg(s.iri))}</a></h3>`;
-  for (const n of s.notes) h += `<div class="note red">The Pilot's section ${esc(n.num)} “${esc(n.title)}” has this section's title; its number places it at ${esc(n.at.split(".").length ? D.sections.find(x => x.iri === n.at).num : "")}.</div>`;
-  if (!s.pilot.length) h += `<p class="pl">No section of the Pilot's M11 document reaches this M11 section.</p>`;
+  for (const n of s.notes) h += `<div class="note red">The study's section ${esc(n.num)} “${esc(n.title)}” has this section's title; its number places it at ${esc(n.at.split(".").length ? D.sections.find(x => x.iri === n.at).num : "")}.</div>`;
+  if (!s.pilot.length) h += `<p class="pl">No section of the study's M11 document reaches this M11 section.</p>`;
   for (const p of s.pilot) {
-    h += `<p class="pl"><span>Pilot section ${esc(p.num)} “${esc(p.title)}”</span><span class="mono">${esc(pil(p.iri))}${p.item ? " → " + esc(pil(p.item)) : ""}</span><span class="pill" style="background:${p.placed_by === "number" ? "var(--one)" : "var(--several)"}">placed by ${esc(p.placed_by)}</span>${p.status !== "agree" ? `<span>${esc(PS[p.status])}</span>` : ""}${p.text ? "" : "<span>heading only, no text</span>"}</p>`;
+    h += `<p class="pl"><span>Study section ${esc(p.num)} “${esc(p.title)}”</span><span class="mono">${esc(pil(p.iri))}${p.item ? " → " + esc(pil(p.item)) : ""}</span><span class="pill" style="background:${p.placed_by === "number" ? "var(--one)" : "var(--several)"}">placed by ${esc(p.placed_by)}</span>${p.status !== "agree" ? `<span>${esc(PS[p.status])}</span>` : ""}${p.text ? "" : "<span>heading only, no text</span>"}</p>`;
     for (const x of p.shared) h += `<div class="note">The same content item is also section ${esc(x.num)} “${esc(x.title)}” of the ${esc(x.template)} document: one text, one identifier.</div>`;
     for (const x of p.copies) h += `<div class="note">Identical text, under a different content item (<span class="mono">${esc(pil(x.item))}</span>), is section ${esc(x.num)} “${esc(x.title)}” of the ${esc(x.template)} document. Found by comparing the text, not by an identifier: the study holds two copies.</div>`;
     if (p.text && filled(s)) h += `<div class="src sv">The study's own text for this section is not shown: the values below come from its structured data (see the Deep dive)</div><div class="body dv">${p.text}</div>`;
@@ -514,11 +516,11 @@ D.sections.forEach((s, i) => {
   });
 });
 if (D.unplaced.length) {
-  let h = `<div class="appendix"><h3>Pilot sections that reach no M11 section</h3><ul>`;
+  let h = `<div class="appendix"><h3>Study sections that reach no M11 section</h3><ul>`;
   for (const p of D.unplaced) h += `<li><span style="font-family:var(--mono);font-size:12px">${esc(p.num)}</span> “${esc(p.title)}” — ${esc(PS[p.status])}${p.text ? " (has text)" : ""}</li>`;
   doc.insertAdjacentHTML("beforeend", h + "</ul></div>");
 }
-doc.insertAdjacentHTML("beforeend", `<p class="colophon">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the Pilot's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). In the Protocol view a heading with &lt;#&gt; is repeated for each study object behind the field for the heading's element, numbered in the order of the study's identifiers (the graph holds no order for them); each repeat keeps the values of that object and of objects reached from it. Values are the Pilot's, as published; the Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf's mapping set m11-usdm carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>`);
+doc.insertAdjacentHTML("beforeend", `<p class="colophon">Draft, not normative. The queries' own reading: a condition clause is run only when it tests a code on the mapped object or on its parent through the target path's last hop; every other clause is shown and not run. Narrative text is placed by the study's section number, the mappings' own rule, and otherwise by its title (this page's join, as on the <a href="index.html">M11 and USDM page</a>). In the Protocol view a heading with &lt;#&gt; is repeated for each study object behind the field for the heading's element, numbered in the order of the study's identifiers (the graph holds no order for them); each repeat keeps the values of that object and of objects reached from it. Values are the study's, as published; the CDISC Pilot is an example file and not mature. ICH M11 content © ICH (ICH Legal Mentions); ICH M11 Terminology, NCI EVS (CC BY 4.0); USDM and the CDISC Pilot from CDISC DDF-RA (CC BY 4.0); mapping statements from HL7 (CC0) and CDISC (CC BY 4.0) as m11-rdf's mapping set m11-usdm carries them. Not an ICH, CDISC or HL7 artifact. · <a href="../">first page</a> · <a href="index.html">M11 and USDM</a> · <a href="https://github.com/kerfors/usdm-one-graph" target="_blank" rel="noopener">source</a></p>`);
 doc.addEventListener("click", e => {
   const o = e.target.closest("a[data-open]");
   if (o) {

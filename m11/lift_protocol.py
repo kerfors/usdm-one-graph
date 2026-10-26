@@ -425,7 +425,7 @@ for c, code, decode in gp.query(P + """
 codes = [{"code": k, "decode": sorted(g["decode"]), "attrs": sorted(g["attrs"]), "n": g["n"]} for k, g in sorted(odd_codes.items())]
 print("CDISC-system codes not of the form C<digits>:", [(c["code"], c["n"]) for c in codes])
 
-out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "sections": order, "unplaced": unplaced, "codes": codes,
+out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "study_name": str(study.get("name", "")), "sections": order, "unplaced": unplaced, "codes": codes,
        "inputs": {k: v[0] for k, v in INPUTS.items()},
        "triples": {"m11": len(gm), "usdm": len(gu), "sssom": len(gs), "pilot": len(gp)}, "graph_triples": len(gm + gu + gs + gp)}
 (HERE / "protocol.json").write_text(json.dumps(out, ensure_ascii=False))
