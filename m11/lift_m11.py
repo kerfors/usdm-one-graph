@@ -58,8 +58,10 @@ def fetch(key):
     return path, url
 
 
+# join code: begin (counted and shown on the page from step 6a)
 def norm(s):
     return re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+# join code: end
 
 
 steps = []
@@ -192,6 +194,7 @@ steps.append({"file": "CDISC_Pilot_Study.json", "url": url, "context": curl,
 print("4:", steps[-1])
 
 # --- 5. the gap: the study's protocol sections and M11 share no identifier -----------------
+# join code: begin
 sec_by_num = {n["num"]: k for k, n in nodes.items() if n["kind"] == "section" and n["num"]}
 sec_by_title = defaultdict(set)
 for k, n in nodes.items():
@@ -200,6 +203,7 @@ for k, n in nodes.items():
     sec_by_title[norm(n["label"].split(" ", 1)[1] if n["num"] else n["label"])].add(k)
     if n["heading"]:
         sec_by_title[norm(n["heading"])].add(k)
+# join code: end
 P = "PREFIX usdm: <" + USDM + "> "
 rows = list(gp.query(P + """
     SELECT ?nc ?num ?title WHERE {
@@ -208,6 +212,7 @@ rows = list(gp.query(P + """
       ?nc usdm:NarrativeContent-sectionNumber ?num ; usdm:NarrativeContent-sectionTitle ?title .
     }"""))
 status = defaultdict(int)
+# join code: begin
 for nc, num, title in rows:
     n_sec = sec_by_num.get(str(num).rstrip("."))
     t_secs = sorted(sec_by_title.get(norm(str(title)), set()))
@@ -222,6 +227,7 @@ for nc, num, title in rows:
         st = "title-only"
     else:
         st = "neither"
+    # join code: end
     status[st] += 1
     node = nodes[str(nc)]
     node.update({"kind": "content", "num": str(num), "title": str(title), "status": st,
@@ -235,7 +241,12 @@ steps.append({"file": None, "url": None, "publisher": "no shared identifier: onl
               "triples": 0, "nodes": 0, "bridges": 0, "contents": len(rows), "status": dict(status)})
 print("5:", steps[-1])
 
-out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "obo": OBO, "steps": steps,
+# the lines of this file between "join code" markers: the only place where the page joins by matching text
+JOIN_LINES = sum(1 for block in re.findall(r"# join code: begin[^\n]*\n(.*?)# join code: end", Path(__file__).read_text(), re.S)
+                 for line in block.splitlines() if line.strip() and not line.strip().startswith("#"))
+print("join code:", JOIN_LINES, "lines")
+
+out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "obo": OBO, "steps": steps, "join_lines": JOIN_LINES,
        "nodes": list(nodes.values()), "links": links}
 (HERE / "graph.json").write_text(json.dumps(out, ensure_ascii=False))
 print("nodes", len(nodes), "links", len(links), "| written m11/graph.json", (HERE / "graph.json").stat().st_size, "bytes")

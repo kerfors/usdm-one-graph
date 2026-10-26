@@ -88,6 +88,7 @@ steps = g["steps"]
 data = {
     "m11": g["m11"], "usdm": usdm, "base": g["base"],
     "steps": [{k: v for k, v in s.items()} for s in steps],
+    "join_lines": g["join_lines"],
     "spine": spine, "chapters": chapters,
     "sections": {s["id"]: {"label": s["label"], "heading": s["heading"], "page": s["page"]} for s in sections},
     "elements": {n["id"]: {"label": n["label"], "definition": n["definition"], "blocks": n["blocks"],
@@ -132,7 +133,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   .counters b { display: block; font-family: var(--mono); font-weight: 500; font-size: 18px; font-variant-numeric: tabular-nums; }
   .counters span { color: var(--muted); font-size: 11px; line-height: 1.25; display: block; }
   .counters .zero b { color: var(--amber); }
-  .counters .zero.text-join b { color: var(--bad); }
+  .counters .zero.text-join b { color: var(--ok); }
   ol.steps { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; }
   ol.steps li { padding: 7px 9px; border-radius: 4px; color: var(--muted); cursor: pointer; border: 1px solid transparent; }
   ol.steps li:hover { border-color: var(--panel-edge); }
@@ -544,7 +545,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     // from 6a the page matches text: section number and title strings, not identifiers
     const j = document.getElementById('c-join');
     j.classList.toggle('text-join', k >= 6);
-    j.innerHTML = k >= 6 ? '<b>1</b><span>join by matching text: section number and title (6a)</span>' : '<b>0</b><span>lines of join code</span>';
+    j.innerHTML = '<b>' + (k >= 6 ? D.join_lines : 0) + '</b><span>lines of join code</span>';
     bNext.textContent = k === 0 ? 'Load the first file' : k < SAY.length ? 'Next' : 'Start again';
     bBack.disabled = k === 0;
     apply();
