@@ -148,7 +148,16 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
   .fine { color: var(--muted); font-size: 11.5px; margin: 0 0 6px; }
   .fine a { color: var(--muted); }
   .spacer { flex: 1; }
-  #stage { position: fixed; top: 0; bottom: 0; left: 370px; right: 0; }
+  #stage { position: fixed; top: 0; bottom: 0; left: 370px; right: 0; transition: opacity 700ms ease; }
+  /* step 5: the protocol read out of the same graph opens over the graph, from the right */
+  #proto { position: fixed; z-index: 4; top: 20px; bottom: 20px; right: 20px; width: calc((100vw - 370px) * 0.62 - 20px); display: flex; flex-direction: column;
+           background: #FAF8F2; border: 1px solid var(--panel-edge); border-radius: 6px; transform: translateX(calc(100% + 40px)); transition: transform 700ms cubic-bezier(.2, .7, .2, 1); }
+  #proto.open { transform: none; }
+  #proto .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 12px; background: var(--panel); color: var(--text); font-size: 13px; border-radius: 6px 6px 0 0; }
+  #proto .bar a { color: var(--amber); }
+  #proto .x { background: var(--amber); border: 0; color: #0F1729; border-radius: 4px; font: 600 12px var(--sans); padding: 5px 12px; cursor: pointer; margin-left: 12px; }
+  #proto iframe { flex: 1; border: 0; width: 100%; background: #FAF8F2; border-radius: 0 0 6px 6px; }
+  body.proto-open #stage { opacity: 0.55; }
   svg { width: 100%; height: 100%; display: block; }
   .step { transition: opacity 600ms ease; }
   svg:not([data-step]) .step, .step.hidden { opacity: 0; pointer-events: none; }
@@ -214,6 +223,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
 </aside>
 <div id="stage"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
 <div class="tip" id="tip" hidden></div>
+<div id="proto" aria-hidden="true"><div class="bar"><span>The same graph, laid out as an ICH M11 protocol</span><span><a href="protocol.html" target="_blank" rel="noopener">open as its own page ↗</a><button type="button" class="x">Close</button></span></div><iframe title="The study as an ICH M11 protocol"></iframe></div>
 
 <script id="data" type="application/json">__DATA__</script>
 <script>
@@ -421,7 +431,7 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     Object.values(layers).forEach(g => g.classList.toggle('hidden', +g.getAttribute('data-step') > cur));
   }
   function go(k) {
-    cur = k; unpin();
+    cur = k; unpin(); if (k < SAY.length) openProto(false);
     [...ol.children].forEach((li, i) => { li.className = i + 1 < k ? 'done' : i + 1 === k ? 'now' : ''; });
     let t = 0, b = 0; S.slice(0, k).forEach(s => { if (s.graph_triples !== undefined) t = s.graph_triples; b += s.bridges; });
     document.getElementById('c-triples').textContent = fmt(t);
@@ -430,6 +440,15 @@ html = r"""<title>ICH M11 and USDM, Coming Together</title>
     bBack.disabled = k === 0;
     apply();
   }
+  // the link in step 5 opens the protocol over the graph instead of leaving the page
+  const proto = document.getElementById('proto');
+  function openProto(on) {
+    if (on && !proto.querySelector('iframe').src) proto.querySelector('iframe').src = 'protocol.html?embed';
+    proto.classList.toggle('open', on); proto.setAttribute('aria-hidden', String(!on)); document.body.classList.toggle('proto-open', on);
+  }
+  ol.addEventListener('click', ev => { const a = ev.target.closest('a.on[href="protocol.html"]'); if (a) { ev.preventDefault(); ev.stopPropagation(); openProto(true); } }, true);
+  proto.querySelector('.x').addEventListener('click', () => openProto(false));
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && proto.classList.contains('open')) openProto(false); });
   bNext.addEventListener('click', () => go(cur === SAY.length ? 0 : cur + 1));
   bBack.addEventListener('click', () => { if (cur > 0) go(cur - 1); });
   window.addEventListener('resize', draw);

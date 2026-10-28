@@ -126,6 +126,10 @@ html = r"""<!doctype html>
   .colophon { border-top: 1px solid var(--rule); margin: 28px 0 0; padding-top: 10px; font-size: 11.5px; color: var(--ink-muted); }
   .colophon a { color: var(--ink-muted); }
   main { margin-left: 380px; padding: 20px 24px 60px 0; }
+  /* embedded in the M11 and USDM page (protocol.html?embed): the document only, in the Protocol view */
+  body.embed .panel { display: none; }
+  body.embed main { margin-left: 0; padding: 0; }
+  body.embed .paper { max-width: none; border-radius: 0; }
   .paper { background: var(--paper); color: var(--ink); border-radius: 6px; padding: 40px 56px; max-width: 1000px; }
   .cover { border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 8px; }
   .cover .k { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); }
@@ -487,6 +491,7 @@ document.querySelector(".views").addEventListener("click", e => {
   if (top) top.scrollIntoView();
 });
 setView(new URLSearchParams(location.search).get("view") === "deep" ? "deep" : "simple");
+if (new URLSearchParams(location.search).has("embed")) document.body.classList.add("embed");
 document.querySelector(".oddlink").addEventListener("click", () => { document.getElementById("oddities").open = true; });
 document.getElementById("hide").addEventListener("change", e => document.body.classList.toggle("hide-empty", e.target.checked));
 document.getElementById("open").addEventListener("change", e => document.querySelectorAll(".route-panel").forEach(p => p.hidden = !e.target.checked));
