@@ -10,8 +10,8 @@ For each Template field: the element it realises, each mapping statement's USDM 
 Pilot's values for that attribute, found by a SPARQL query kept with the result. A condition clause is
 run only when it tests a code (@code or @decode, = or IN) on the same object as the mapped attribute;
 the section-number condition is the mappings' own placement rule. Every other clause is kept as text.
-Narrative text is placed by the Pilot's section number (the mappings' rule) and, where the number
-finds nothing, by its title (this page's own join, as on the M11 page).
+The study's protocol text (StudyDefinitionDocument) is not read: a field the mappings take from it, by
+their section rule, is marked as such.
 """
 import hashlib
 import json
@@ -54,16 +54,11 @@ def fetch(key):
     return path, url
 
 
-def norm(s):
-    return re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
-
-
 M11 = rdflib.Namespace("https://w3id.org/m11-rdf/")
 USDM = "https://w3id.org/cdisc/usdm/v4/"
 U = rdflib.Namespace(USDM)
 BASE_IRI = "https://example.org/studies/CDISC_Pilot/"
 CDISC_CODE_SYSTEM = "http://www.cdisc.org"  # the codeSystem USDM uses for CDISC / NCIt controlled terminology
-M11_TEMPLATE = "M11"  # StudyDefinitionDocument.templateName of the study's M11 protocol document
 PREFIXES = f"PREFIX usdm: <{USDM}> "
 
 gm = rdflib.Graph().parse(fetch("m11")[0], format="turtle")
@@ -255,60 +250,7 @@ def tidy(q):
     return re.sub(r"<" + re.escape(USDM) + r"([^>]+)>", r"usdm:\1", q)
 
 
-# --- the Pilot's M11 document -------------------------------------------------------------------------
 P = PREFIXES
-pilot_sections = []
-for nc, num, title, nci in gp.query(P + """
-    SELECT ?nc ?num ?title ?nci WHERE {
-      ?doc usdm:StudyDefinitionDocument-templateName ?tn ; usdm:StudyDefinitionDocument-versions ?ver .
-      ?ver usdm:StudyDefinitionDocumentVersion-contents ?nc .
-      ?nc usdm:NarrativeContent-sectionNumber ?num ; usdm:NarrativeContent-sectionTitle ?title .
-      OPTIONAL { ?nc usdm:NarrativeContent-contentItemId ?nci }
-    }""", initBindings={"tn": rdflib.Literal(M11_TEMPLATE)}):
-    text, refs = None, []
-    if nci is not None:
-        t = gp.value(nci, U["NarrativeContentItem-text"])
-        text = resolve(str(t), nci) if t is not None else None
-        # the study objects the text refers to by usdm:ref (top level, as written in the text)
-        refs = sorted({dict(ATTR.findall(m.group(2)))["id"] for m in REF.finditer(str(t)) if m.group(1) == "ref"}) if t is not None else []
-    pilot_sections.append({"iri": str(nc), "num": str(num), "title": str(title),
-                           "item": str(nci) if nci is not None else None, "text": text, "refs": refs, "shared": []})
-if not pilot_sections:
-    raise ValueError(f"no StudyDefinitionDocument with templateName {M11_TEMPLATE!r} and sections")
-
-# the same NarrativeContentItem used by a section of another document (or another section): a join by identifier
-by_iri = {ps["iri"]: ps for ps in pilot_sections}
-for nc, nc2, tn, num2, title2 in gp.query(P + """
-    SELECT DISTINCT ?nc ?nc2 ?tn ?num2 ?title2 WHERE {
-      ?nc usdm:NarrativeContent-contentItemId ?nci .
-      ?nc2 usdm:NarrativeContent-contentItemId ?nci .
-      FILTER(?nc2 != ?nc)
-      ?ver2 usdm:StudyDefinitionDocumentVersion-contents ?nc2 .
-      ?doc2 usdm:StudyDefinitionDocument-versions ?ver2 ; usdm:StudyDefinitionDocument-templateName ?tn .
-      ?nc2 usdm:NarrativeContent-sectionNumber ?num2 ; usdm:NarrativeContent-sectionTitle ?title2 .
-    }"""):
-    if str(nc) in by_iri:
-        by_iri[str(nc)]["shared"].append({"iri": str(nc2), "template": str(tn), "num": str(num2), "title": str(title2)})
-for ps in pilot_sections:
-    ps["shared"].sort(key=lambda x: (x["template"], x["num"]))
-
-# identical text under a different content item, in any section of any document: string matching, labelled as such
-by_text = defaultdict(list)
-for nc, nci, t, tn, num2, title2 in gp.query(P + """
-    SELECT ?nc ?nci ?t ?tn ?num ?title WHERE {
-      ?nc usdm:NarrativeContent-contentItemId ?nci ; usdm:NarrativeContent-sectionNumber ?num ; usdm:NarrativeContent-sectionTitle ?title .
-      ?nci usdm:NarrativeContentItem-text ?t .
-      ?ver usdm:StudyDefinitionDocumentVersion-contents ?nc .
-      ?doc usdm:StudyDefinitionDocument-versions ?ver ; usdm:StudyDefinitionDocument-templateName ?tn .
-    }"""):
-    by_text[str(t)].append({"iri": str(nc), "item": str(nci), "template": str(tn), "num": str(num2), "title": str(title2)})
-for ps in pilot_sections:
-    ps["copies"] = []
-    if ps["item"] is None:
-        continue
-    t = gp.value(rdflib.URIRef(ps["item"]), U["NarrativeContentItem-text"])
-    if t is not None and str(t).strip():
-        ps["copies"] = sorted((x for x in by_text[str(t)] if x["item"] != ps["item"]), key=lambda x: (x["template"], x["num"]))
 
 # --- M11 sections, Template headings and fields ------------------------------------------------------
 sections = {}
@@ -320,7 +262,7 @@ for s in gm.subjects(RDF.type, M11.Section):
                         "optional": str(gm.value(s, M11.templateOptional)) == "true",
                         "conditional": str(gm.value(s, M11.templateConditional)) == "true",
                         "heading_element": str(gm.value(s, M11.headingElement) or ""),
-                        "fields": [], "pilot": [], "notes": []}
+                        "fields": []}
 
 records = defaultdict(list)
 for ax in gs.subjects(RDF.type, OWL.Axiom):
@@ -374,31 +316,6 @@ for s, sec in sections.items():
         sec["fields"].append(field)
     sec["fields"].sort(key=lambda x: x["order"])
 
-# --- place the Pilot's sections: by number (the mappings' rule), else by title (this page's join) -----------
-by_num = {v["num"]: k for k, v in sections.items() if v["num"]}
-by_title = defaultdict(set)
-for k, v in sections.items():
-    by_title[norm(v["label"].split(" ", 1)[1] if v["num"] else v["label"])].add(k)
-    if v["heading"]:
-        by_title[norm(v["heading"])].add(k)
-unplaced = []
-for ps in pilot_sections:
-    n = by_num.get(ps["num"].rstrip("."))
-    ts = sorted(by_title.get(norm(ps["title"]), set()))
-    t = n if n in ts else (ts[0] if len(ts) == 1 else None)
-    ps["by_number"], ps["by_title"] = n, t
-    ps["status"] = ("title-ambiguous" if len(ts) > 1 and t is None else "agree" if n and n == t else
-                    "differ" if n and t else "number-only" if n else "title-only" if t else "neither")
-    if n:
-        sections[n]["pilot"].append({**ps, "placed_by": "number"})
-        if t and t != n:
-            sections[t]["notes"].append({"iri": ps["iri"], "num": ps["num"], "title": ps["title"], "at": n})
-    elif t:
-        sections[t]["pilot"].append({**ps, "placed_by": "title"})
-    else:
-        unplaced.append(ps)
-
-
 def nkey(num):
     return [int(x) if x.isdigit() else x for x in re.split(r"[.]", num)] if num else []
 
@@ -425,7 +342,7 @@ for c, code, decode in gp.query(P + """
 codes = [{"code": k, "decode": sorted(g["decode"]), "attrs": sorted(g["attrs"]), "n": g["n"]} for k, g in sorted(odd_codes.items())]
 print("CDISC-system codes not of the form C<digits>:", [(c["code"], c["n"]) for c in codes])
 
-out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "study_name": str(study.get("name", "")), "sections": order, "unplaced": unplaced, "codes": codes,
+out = {"m11": str(M11), "usdm": USDM, "base": BASE_IRI, "study_name": str(study.get("name", "")), "sections": order, "codes": codes,
        "inputs": {k: v[0] for k, v in INPUTS.items()},
        "triples": {"m11": len(gm), "usdm": len(gu), "sssom": len(gs), "pilot": len(gp)}, "graph_triples": len(gm + gu + gs + gp)}
 (HERE / "protocol.json").write_text(json.dumps(out, ensure_ascii=False))
@@ -436,11 +353,7 @@ rstat = defaultdict(int)
 for f in fields:
     for r in f["routes"]:
         rstat[r["status"]] += 1
-print("Pilot sections with identical text under another content item:", [(p["num"], [(x["template"], x["num"], x["item"][len(BASE_IRI):]) for x in p["copies"]]) for p in pilot_sections if p["copies"]])
-print("Pilot sections sharing a content item with another section:", sum(1 for p in pilot_sections if p["shared"]),
-      [(p["num"], [(x["template"], x["num"]) for x in p["shared"]]) for p in pilot_sections if p["shared"]])
-print("sections", len(order), "| with Pilot section placed", sum(1 for s in order if s["pilot"]),
-      "| with Pilot text", sum(1 for s in order if any(p["text"] for p in s["pilot"])), "| unplaced", len(unplaced))
+print("sections", len(order))
 print("fields", len(fields), "| realising an element", sum(1 for f in fields if f["element"]),
       "| with a mapping route", sum(1 for f in fields if f["routes"]), "| routes by status", dict(rstat),
       "| with a last hop", sum(1 for f in fields for r in f["routes"] if r["hop"]))
