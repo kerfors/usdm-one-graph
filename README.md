@@ -36,7 +36,7 @@ step by step; page three reads a protocol out of it.
 Live page: https://kerfors.github.io/usdm-one-graph/m11/
 
 Published files about ICH M11 and USDM v4, loaded one at a time and as they are, in
-five steps. Where two files use the same identifier, they join by themselves. The page
+six steps. Where two files use the same identifier, they join by themselves. The page
 uses the study's structured data only; its protocol text (`StudyDefinitionDocument`) is
 not read.
 
@@ -54,8 +54,10 @@ not read.
    of its subclasses hold it. 5 reach only attributes no object in the study holds. 140 go
    only to `NarrativeContentItem.text`, the protocol text: specified by the mappings, not
    read here.
+6. The study as an ICH M11 protocol: the third page opens in a panel over the graph,
+   with the ICH M11 column still visible behind it; Close (or Esc) goes back to step 5.
 
-`index.html?step=3` opens a given step; the last step links to the third page.
+`index.html?step=3` opens a given step.
 
 The example study is not fully consistent or populated; it is used because it is real.
 Every M11 and USDM identifier shown resolves.

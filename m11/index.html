@@ -47,7 +47,7 @@
   .fine a { color: var(--muted); }
   .spacer { flex: 1; }
   #stage { position: fixed; top: 0; bottom: 0; left: 370px; right: 0; transition: opacity 700ms ease; }
-  /* step 5: the protocol read out of the same graph opens over the graph, from the right */
+  /* step 6: the protocol read out of the same graph opens over the graph, from the right */
   #proto { position: fixed; z-index: 4; top: 20px; bottom: 20px; right: 20px; width: calc((100vw - 370px) * 0.62 - 20px); display: flex; flex-direction: column;
            background: #FAF8F2; border: 1px solid var(--panel-edge); border-radius: 6px; transform: translateX(calc(100% + 40px)); transition: transform 700ms cubic-bezier(.2, .7, .2, 1); }
   #proto.open { transform: none; }
@@ -70,13 +70,15 @@
   .srcnote { fill: var(--amber); }
   .pick { font-family: var(--sans); font-size: 11px; font-weight: 600; paint-order: stroke; stroke: #0F1729; stroke-width: 4px; }
   .bridges, .bars rect, .bars line, .bars text { transition: opacity 600ms ease, fill 600ms ease; }
-  svg[data-step="5"] .bridges { opacity: 0.06; }
+  svg[data-step="5"] .bridges, svg[data-step="6"] .bridges { opacity: 0.06; }
   .plabel { font-family: var(--sans); font-size: 10px; fill: #B8C3DE; paint-order: stroke; stroke: #0F1729; stroke-width: 3px; transition: opacity 600ms ease; }
   .grow path, .grow line { stroke-dasharray: 1; stroke-dashoffset: 1; }
   .grow rect { opacity: 0; }
   svg[data-step="5"] .grow path { animation: grow 1.4s ease-out 0.3s forwards; }
   svg[data-step="5"] .grow line.late { animation: grow 0.6s ease-out 1.6s forwards; }
   svg[data-step="5"] .grow rect.late { animation: fadein 0.5s ease-out 2.1s forwards; }
+  svg[data-step="6"] .grow path, svg[data-step="6"] .grow line { stroke-dashoffset: 0; }
+  svg[data-step="6"] .grow rect { opacity: 1; }
   @keyframes grow { to { stroke-dashoffset: 0; } }
   @keyframes fadein { to { opacity: 1; } }
   .pdot { transition: fill 600ms ease, r 600ms ease; }
@@ -127,7 +129,7 @@
 <script>
 (function () {
   const D = JSON.parse(document.getElementById('data').textContent);
-  const S = D.steps;
+  const S = D.steps.concat([{ bridges: 0 }]);
   const fmt = n => n.toLocaleString('en-GB');
   const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const NS = 'http://www.w3.org/2000/svg';
@@ -140,12 +142,13 @@
     ['USDM v4', () => file(S[1]) + '<br>A second file, made independently. Nothing links the two yet.'],
     ['HL7 and CDISC mappings', () => file(S[2]) + '<br>A separate mapping set, published next to the M11 identifiers and pointing at them. Each statement names an M11 element and a USDM attribute, so <b>' + S[2].bridges + ' links</b> appear. No matching. <b style="color:var(--both)">' + S[2].both + '</b> are stated by both CDISC and HL7, <b style="color:var(--one)">' + (S[2].bridges - S[2].both) + '</b> by only one of them.'],
     ['The study\'s structured data', () => file(S[3]) + '<br>' + fmt(S[3].nodes) + ' objects find their ' + S[3].classes_used + ' USDM classes by themselves, through the JSON-LD context.'],
-    ['M11 elements → the study\'s structured data', () => 'Through the mapping statements alone, from each ICH M11 element to the study\'s structured data. <b style="color:var(--both)">' + R5.data + ' elements</b> reach ' + R5.attrs + ' attributes that objects in the study hold, in ' + R5.classes + ' classes. ' + R5.none + ' reach only attributes no object in the study holds. ' + R5.text + ' go only to NarrativeContentItem.text, the protocol text (grey): specified by the mappings, not read here. <a class="on" href="protocol.html">The same graph, laid out as an ICH M11 protocol →</a>'],
+    ['M11 elements → the study\'s structured data', () => 'Through the mapping statements alone, from each ICH M11 element to the study\'s structured data. <b style="color:var(--both)">' + R5.data + ' elements</b> reach ' + R5.attrs + ' attributes that objects in the study hold, in ' + R5.classes + ' classes. ' + R5.none + ' reach only attributes no object in the study holds. ' + R5.text + ' go only to NarrativeContentItem.text, the protocol text (grey): specified by the mappings, not read here.'],
+    ['The study as an ICH M11 protocol', () => 'The same graph, read out as a protocol. The outline is the ICH M11 Template as m11-rdf renders it; each Template field is filled by a query that follows the mapping statements into the study\'s structured data. A field the mappings take from the protocol text says so; a grey — marks an element the graph finds no clear value for. <a class="on" href="protocol.html" target="_blank" rel="noopener">Open it as its own page, with the Deep dive ↗</a>'],
   ];
   const ol = document.getElementById('steps');
   SAY.forEach((s, i) => {
     const li = document.createElement('li');
-    li.innerHTML = '<div class="h"><b>' + ['1', '2', '3', '4', '5'][i] + '</b><span>' + s[0] + '</span></div><div class="say">' + s[1]() + '</div>';
+    li.innerHTML = '<div class="h"><b>' + ['1', '2', '3', '4', '5', '6'][i] + '</b><span>' + s[0] + '</span></div><div class="say">' + s[1]() + '</div>';
     li.addEventListener('click', () => go(i + 1));
     ol.appendChild(li);
   });
@@ -207,7 +210,7 @@
     const L = layers;
     // column heads: always shown, so the layout is visible from the start; each step highlights its own
     const heads = el('g', { class: 'heads' });
-    el('text', { x: xB, y: 40, 'text-anchor': 'middle', class: 'colhead', 'data-hl': '1 5' }, heads).textContent = 'ICH M11';
+    el('text', { x: xB, y: 40, 'text-anchor': 'middle', class: 'colhead', 'data-hl': '1 5 6' }, heads).textContent = 'ICH M11';
     [[css('--both'), 'stated by CDISC and HL7'], [css('--one'), 'stated by only one of them']].forEach(([c, t], i) => {
       el('line', { x1: xB + 20, y1: 52 + i * 12, x2: xB + 30, y2: 52 + i * 12, stroke: c, 'stroke-width': 2 }, L.g3);
       el('text', { x: xB + 34, y: 55.5 + i * 12, class: 'legend', 'data-hl': '3' }, L.g3).textContent = t;
@@ -329,7 +332,7 @@
     Object.values(layers).forEach(g => g.classList.toggle('hidden', +g.getAttribute('data-step') > cur));
   }
   function go(k) {
-    cur = k; unpin(); if (k < SAY.length) openProto(false);
+    cur = k; unpin(); openProto(k === SAY.length);
     [...ol.children].forEach((li, i) => { li.className = i + 1 < k ? 'done' : i + 1 === k ? 'now' : ''; });
     let t = 0, b = 0; S.slice(0, k).forEach(s => { if (s.graph_triples !== undefined) t = s.graph_triples; b += s.bridges; });
     document.getElementById('c-triples').textContent = fmt(t);
@@ -338,20 +341,20 @@
     bBack.disabled = k === 0;
     apply();
   }
-  // the link in step 5 opens the protocol over the graph instead of leaving the page
+  // step 6 opens the protocol over the graph; Close (or Esc) goes back to step 5
   const proto = document.getElementById('proto');
   function openProto(on) {
     if (on && !proto.querySelector('iframe').src) proto.querySelector('iframe').src = 'protocol.html?embed';
     proto.classList.toggle('open', on); proto.setAttribute('aria-hidden', String(!on)); document.body.classList.toggle('proto-open', on);
   }
-  ol.addEventListener('click', ev => { const a = ev.target.closest('a.on[href="protocol.html"]'); if (a) { ev.preventDefault(); ev.stopPropagation(); openProto(true); } }, true);
-  proto.querySelector('.x').addEventListener('click', () => openProto(false));
-  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && proto.classList.contains('open')) openProto(false); });
+  ol.addEventListener('click', ev => { if (ev.target.closest('a.on[href="protocol.html"]')) ev.stopPropagation(); }, true);
+  proto.querySelector('.x').addEventListener('click', () => go(SAY.length - 1));
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && proto.classList.contains('open')) go(SAY.length - 1); });
   bNext.addEventListener('click', () => go(cur === SAY.length ? 0 : cur + 1));
   bBack.addEventListener('click', () => { if (cur > 0) go(cur - 1); });
   window.addEventListener('resize', draw);
   document.fonts.ready.then(draw);
-  draw(); go(['1', '2', '3', '4', '5'].indexOf(new URLSearchParams(location.search).get('step')) + 1);
+  draw(); go(['1', '2', '3', '4', '5', '6'].indexOf(new URLSearchParams(location.search).get('step')) + 1);
   window.M11Story = { go };
 })();
 </script>
